@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
@@ -10,7 +11,8 @@ from datetime import datetime, timedelta
 
 stock_list = [
     "2330",
-    "2454"
+    "2454",
+    "2308"
 ]
 
 
@@ -36,8 +38,8 @@ def generate_date_range(start_date, end_date):
     return dates
 
 dates = generate_date_range(
-    "2026-06-23",
-    "2026-07-01"
+    "2026-02-23",
+    "2026-06-23"
 )
 
 
@@ -146,8 +148,16 @@ news_df = pd.concat(
 # 儲存
 # ============================
 
+# 建立資料夾路徑
+output_folder = "source"
+
+os.makedirs(output_folder, exist_ok=True)
+
+# 完整檔案路徑
+output_file = os.path.join(output_folder, "TaiwanStockNews_test.csv")
+
 news_df.to_csv(
-    "TaiwanStockNews_test.csv",
+    output_file,
     index=False,
     encoding="utf-8-sig"
 )
