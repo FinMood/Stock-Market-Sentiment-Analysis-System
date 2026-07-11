@@ -36,14 +36,32 @@ Source → Ingest → Storage → Process → Serve → Observe
 
 ---
 
+## 環境需求
+
+- **Python ≥ 3.12**（專案透過 `.python-version` 鎖定為 3.12）
+- **[uv](https://docs.astral.sh/uv/)** — 快速的 Python 套件 / 專案管理工具
+
+> [!IMPORTANT]
+> 本專案以 `uv` 管理依賴（`pyproject.toml`），不使用傳統 `requirements.txt`。
+> 若尚未安裝 uv，請先執行：
+> ```bash
+> # Windows (PowerShell)
+> powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+>
+> # macOS / Linux
+> curl -LsSf https://astral.sh/uv/install.sh | sh
+> ```
+
+---
+
 ## 快速開始
 
 ```bash
 git clone https://github.com/FinMood/Stock-Market-Sentiment-Analysis-System.git
 cd Stock-Market-Sentiment-Analysis-System
 cp .env.example .env   # 填入需要的 API keys
-pip install -r requirements.txt
-python main.py
+uv sync                # 自動建立 venv 並安裝所有依賴
+uv run python main.py  # 透過 uv 執行（自動使用正確的 venv）
 ```
 
 ---
