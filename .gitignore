@@ -1,5 +1,9 @@
 .env
+<<<<<<< Updated upstream
 *.db
 __pycache__/
 .venv/
 .pytest_cache/
+=======
+.csv
+>>>>>>> Stashed changes
