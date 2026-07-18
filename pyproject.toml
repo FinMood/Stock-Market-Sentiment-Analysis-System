@@ -5,16 +5,14 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-<<<<<<< Updated upstream
     "celery>=5.6.3",
     "jieba>=0.42.1",
     "pandas>=3.0.3",
     "requests>=2.34.2",
-=======
     "ckip-transformers>=0.3.4",
     "jieba>=0.42.1",
     "pandas>=3.0.3",
     "requests>=2.34.2",
     "torch>=2.13.0",
->>>>>>> Stashed changes
+    "yfinance>=1.5.1",
 ]

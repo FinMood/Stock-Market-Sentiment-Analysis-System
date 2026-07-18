@@ -90,19 +90,33 @@ Source → Ingest → Storage → Process → Serve → Observe
 ## 快速開始
 
 ```bash
-git clone https://github.com/FinMood/Stock-Market-Sentiment-Analysis-System.git
+git clone [https://github.com/FinMood/Stock-Market-Sentiment-Analysis-System.git](https://github.com/FinMood/Stock-Market-Sentiment-Analysis-System.git)
 cd Stock-Market-Sentiment-Analysis-System
 cp .env.example .env   # 填入需要的 API keys
 uv sync                # 自動建立 venv 並安裝所有依賴
 uv run python main.py  # 透過 uv 執行（自動使用正確的 venv）
+./.venv/bin/python run_pipeline.py # 清洗新聞、計算分數並存入 SQLite
 ```
 
 ---
 
+
+## 後端資料管線 (Data Pipeline) 運行步驟
+核心情緒分析引擎（sentiment_analyzer.py）與資料庫載入流已完成。未來組員若引入專門的財經字典，只需替換字典輸入路徑，整套 Pipeline 與資料庫即可無縫升級。
+請確保已啟用虛擬環境（.venv），並依序在終端機執行以下指令以驗證資料流：
+```bash
+./.venv/bin/python download_0050_price.py 
+./.venv/bin/python insert_stock.py # 下載大盤歷史股價並載入資料庫（含缺失值清洗與型態防錯）
+./.venv/bin/python verify_join.py # 進行跨表時序關聯驗證（透過日期對齊每日新聞分數與收盤股價
+```
+
+---
+
+`
 ## 團隊
 分工
-Table 1 —> Table 3 : 2-3位(包含斷詞等處理)
-Table 3+ Table 2 —> Table 4  ： 2-3位  (包含建立API)
+Table 1 ➔ Table 3 : 2-3位(包含斷詞等處理)
+Table 3 + Table 2 ➔ Table 4 ： 2-3位  (包含建立API)
 
 | 成員 | 負責範圍 | GitHub |
 |---|---|---|
@@ -111,6 +125,8 @@ Table 3+ Table 2 —> Table 4  ： 2-3位  (包含建立API)
 | 廖宏偉 | {資料整合} | [宏偉github](https://github.com/Json105) |
 | 賴至得 | {斷詞/字典計分} | [至得github](https://github.com/cloudyctl67) |
 | 蘇建豪 | {資料整合} | [建豪github](https://github.com/sum78435-lang) |
+| 吳桓宇 | {清洗股價資料、輿情計分、建置後端關係型資料庫} | [桓宇github](https://github.com/joywucareer) |
+```
 
 ---
 
