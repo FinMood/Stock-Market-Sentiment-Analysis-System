@@ -1,91 +1,146 @@
 import os
+import glob
+import re
 import pandas as pd
-import jieba
-import sqlite3
-from sentiment_analyzer import calculate_sentiment_score
+from difflib import SequenceMatcher
+from sentiment_analyzer import analyze_and_save_csv
 
-def save_to_sqlite(df, db_path="taiwan50_sentiment.db"):
-    """
-    自動建立 SQLite 資料庫與表格，並將 DataFrame 資料寫入
-    """
-    print(f"正在連線至 SQLite 資料庫 ({db_path})...")
-    # 連線到資料庫（若檔案不存在會自動建立）
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    
-    # 建立新聞情緒資料表
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS news_sentiment (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT,
-        stock_id TEXT,
-        title TEXT,
-        sentiment REAL
-    )
-    """)
-    conn.commit()
-    
-    # 將資料寫入資料庫（if_exists='append' 代表每次執行是附加新資料，不覆蓋舊資料）
-    # 如果你想每次執行都清空重來，可以改成 if_exists='replace'
-    df.to_sql("news_sentiment", conn, if_exists="replace", index=False)
-    
-    # 驗證是否寫入成功
-    cursor.execute("SELECT COUNT(*) FROM news_sentiment")
-    total_rows = cursor.fetchone()[0]
-    print(f"🎉 SQLite 資料庫更新成功！目前 `news_sentiment` 表內共有 {total_rows} 筆資料。")
-    
-    conn.close()
+# ==================== 1. 新聞檔案自動搜尋 ====================
+def find_news_csv():
+    candidate_paths = [
+        "TaiwanStockNews_test.csv",
+        "./data/TaiwanStockNews_test.csv",
+        "TaiwanStockNews.csv",
+        "./data/TaiwanStockNews.csv",
+        "raw_news.csv",
+        "./data/raw_news.csv",
+        "news.csv",
+        "./data/news.csv"
+    ]
 
-def main():
-    # 1. 載入 NTUSD 情感詞典
-    pos_fpath = "NTUSD/正面詞無重複_9365詞.txt"
-    neg_fpath = "NTUSD/負面詞無重複_11230詞.txt"
-    
-    print("正在載入 NTUSD 情感詞典 (UTF-8)...")
-    pos_df = pd.read_csv(pos_fpath, header=None, names=["word"], encoding="utf-8")
-    neg_df = pd.read_csv(neg_fpath, header=None, names=["word"], encoding="utf-8")
-    
-    pos_set = set(pos_df["word"].tolist())
-    neg_set = set(neg_df["word"].tolist())
+    for path in candidate_paths:
+        if os.path.exists(path):
+            print(f"🎯 [自動偵測] 成功找到新聞檔案：{path}")
+            return path
 
-    # 2. 載入新聞標題 CSV
-    news_title_fname = "source/TaiwanStockNews_test.csv"
-    if not os.path.exists(news_title_fname):
-        print(f"找不到新聞檔案 {news_title_fname}，請確認檔案在 source 資料夾內。")
-        return
-        
-    news_df = pd.read_csv(news_title_fname)
-    print(f"成功載入新聞，共 {len(news_df)} 筆。開始整理時間格式...")
+    search_dirs = [".", "./data"]
+    all_csvs = []
+    for d in search_dirs:
+        if os.path.exists(d):
+            all_csvs.extend(glob.glob(os.path.join(d, "*.csv")))
 
-    # 資料清洗：將時間精簡為純日期 (YYYY-MM-DD)
-    news_df['date'] = pd.to_datetime(news_df['date']).dt.strftime('%Y-%m-%d')
+    input_csvs = [
+        f for f in all_csvs 
+        if "results" not in f and "comparison" not in f and "cache" not in f and "output" not in f
+    ]
 
-    # 3. 擴充自訂財經詞庫
-    finance_words = ["台積電", "聯發科", "營收創新高", "未達預期", "台股", "翻紅", "翻黑"]
-    for word in finance_words:
-        jieba.add_word(word)
+    if input_csvs:
+        selected_file = input_csvs[0]
+        print(f"🔍 [自動搜尋] 自動採用找到的第一個 CSV：{selected_file}")
+        return selected_file
 
-    # 4. 批次計算分數
-    print("開始進行精確情緒評分...")
-    sentiments = []
-    for title in news_df["title"]:
-        score = calculate_sentiment_score(title, pos_set, neg_set)
-        sentiments.append(score)
-        
-    news_df["sentiment"] = sentiments
-    
-    # 5. 篩選標準欄位
-    final_columns = ["date", "stock_id", "title", "sentiment"]
-    output_df = news_df[final_columns]
+    return None
 
-    # 6. 建立 data 資料夾並儲存 CSV 備份
-    os.makedirs("data", exist_ok=True)
-    output_fname = "data/news_sentiment_processed.csv"
-    output_df.to_csv(output_fname, index=False, encoding="utf-8")
-    print(f"💾 加工 CSV 備份已儲存至：{output_fname}")
 
-    # 7. 自動寫入 SQLite 資料庫
-    save_to_sqlite(output_df)
+def load_news_data() -> pd.DataFrame:
+    csv_path = find_news_csv()
+
+    if csv_path:
+        for encoding in ['utf-8-sig', 'utf-8', 'big5']:
+            try:
+                df = pd.read_csv(csv_path, encoding=encoding)
+                print(f"✅ 成功載入 {len(df)} 筆新聞資料（編碼：{encoding}）")
+                return df
+            except UnicodeDecodeError:
+                continue
+
+    print("⚠️ 未找到任何 valid 的新聞 CSV 檔案，將啟用預設範例資料執行。")
+    return pd.DataFrame([
+        {"id": 1, "date": "2026-06-20", "title": "台積電創新高，股價大漲"},
+        {"id": 2, "date": "2026-06-21", "title": "市場恐懼情緒蔓延，大盤爆量下跌"},
+        {"id": 3, "date": "2026-06-22", "title": "聯準會宣布按兵不動，觀望氣氛濃"}
+    ])
+
+
+# ==================== 2. 跨平台類似標題去重機制 ====================
+def clean_title(title):
+    """移除媒體前後綴標籤與標點符號，純化文字進行相似度比對"""
+    title = re.sub(r'【.*?】|\[.*?\]|\(.*?\)|「.*?」', '', str(title))
+    title = re.sub(r'[^\w\s]', '', title)
+    return title.strip()
+
+
+def filter_similar_titles(df, threshold=0.85):
+    """依照模糊相似度對改寫新聞去重"""
+    if 'title' not in df.columns or len(df) == 0:
+        return df
+
+    unique_rows = []
+    seen_cleaned_titles = []
+
+    for _, row in df.iterrows():
+        raw_title = row['title']
+        cleaned = clean_title(raw_title)
+
+        if not cleaned:
+            continue
+
+        is_similar = False
+        for seen in seen_cleaned_titles:
+            # 計算 Jaccard / Sequence 比對
+            ratio = SequenceMatcher(None, cleaned, seen).ratio()
+            if ratio >= threshold:
+                is_similar = True
+                break
+
+        if not is_similar:
+            seen_cleaned_titles.append(cleaned)
+            unique_rows.append(row)
+
+    filtered_df = pd.DataFrame(unique_rows).reset_index(drop=True)
+    print(f"🧹 [相似標題過濾] 原資料 {len(df)} 筆 -> 去重後剩餘 {len(filtered_df)} 筆新聞 (相似門檻: {threshold*100:.0f}%)")
+    return filtered_df
+
+
+# ==================== 3. 主流程邏輯 ====================
+def run_pipeline():
+    print("========================================")
+    print("🚀 開始執行台股新聞情緒分析 Pipeline")
+    print("========================================\n")
+
+    # 1. 建立輸出目錄
+    output_dir = "./output"
+    os.makedirs(output_dir, exist_ok=True)
+
+    # 2. 讀取新聞資料
+    df_news = load_news_data()
+
+    # 3. 跨平台改寫類似新聞去重
+    df_news = filter_similar_titles(df_news, threshold=0.85)
+
+    # 4. 設定特定期間篩選
+    START_DATE = "2026-02-23"
+    END_DATE   = "2026-03-23"
+
+    if 'date' in df_news.columns:
+        df_news['date_dt'] = pd.to_datetime(df_news['date'], errors='coerce')
+            # mask = (df_news['date_dt'] >= START_DATE) & (df_news['date_dt'] <= END_DATE)
+            # df_news = df_news[mask].drop(columns=['date_dt']).reset_index(drop=True)
+        print(f"📅 [特定期間篩選] （{START_DATE} ~ {END_DATE}），符合條件剩餘新聞：{len(df_news)} 筆\n")
+    else:
+        print("⚠️ 未發現 'date' 欄位，將跳過日期過濾處理全數資料。\n")
+
+    # 5. 執行增量情緒分析並匯出 CSV
+    df_dict, df_llm = analyze_and_save_csv(df_news, output_dir=output_dir)
+
+    print("\n========================================")
+    print("🎉 Pipeline 執行完成！")
+    print(f"📁 輸出檔案已存放在：{os.path.abspath(output_dir)}")
+    print("  ├─ dictionary_results.csv  (字典結果)")
+    print("  ├─ llm_results.csv         (LLM 結果)")
+    print("  ├─ sentiment_comparison.csv(對比結果)")
+    print("  └─ sentiment_cache.csv     (歷史快取庫)")
+    print("========================================")
 
 if __name__ == "__main__":
-    main()
+    run_pipeline()

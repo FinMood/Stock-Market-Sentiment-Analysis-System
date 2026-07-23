@@ -1,0 +1,13 @@
+# ~/Stock-Market-Sentiment-Analysis-System/llm_config.py
+import os
+
+# 優先讀取使用者電腦的環境變數；若無則讀取預設字串
+# 請組員自行將 "YOUR_GEMINI_KEY" 替換為自己的 API 金鑰
+# 新聞標題批次評分 / 輸出 JSON 👉 選擇 meta/llama-3.1-70b-instruct（速度快、格式穩、繁中台股理解能力強）。
+# 如果未來要開發「撰寫長篇個股深度研究報告 / 複雜財報推理」👉 可改用DeepSeek-R1。
+
+
+# API Keys 設定（按優先順序：Groq -> Cerebras -> OpenRouter。主要使用Groq, Cerebras和OpenRouter當備案）
+GROQ_API_KEY = "gsk_你的Groq_Key"
+CEREBRAS_API_KEY = "csk-你的Cerebras_Key"
+OPENROUTER_API_KEY = "sk-or-v1-你的OpenRouter_Key"

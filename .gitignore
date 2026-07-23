@@ -1,9 +1,17 @@
+# 敏感設定檔與 API 金鑰 (絕對不上傳)
 .env
-<<<<<<< Updated upstream
+llm_config.py
+
+# 程式產出的結果與中間暫存檔
+output/
+processed_data/
+
+# 資料庫與 CSV 檔案 (可依團隊需求取消註解)
 *.db
+# *.csv
+
+# Python 快取與虛擬環境
 __pycache__/
 .venv/
 .pytest_cache/
-=======
-.csv
->>>>>>> Stashed changes
+*.pyc

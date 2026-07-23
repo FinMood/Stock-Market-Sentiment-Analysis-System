@@ -10,10 +10,8 @@ dependencies = [
     "pandas>=3.0.3",
     "requests>=2.34.2",
     "ckip-transformers>=0.3.4",
-    "jieba>=0.42.1",
-    "pandas>=3.0.3",
-    "requests>=2.34.2",
     "torch>=2.13.0",
     "yfinance>=1.5.1",
     "mysql-connector-python>=9.7.0",
+    "openai>=1.0.0",
 ]
