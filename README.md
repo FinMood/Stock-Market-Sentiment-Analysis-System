@@ -50,22 +50,47 @@
 ---
 
 ## 系統架構
-![alt text](image.png)
 
+本系統結合了 **LLM 大模型 API** 與自動化資料工程 (ETL) 以提供最精準的防呆決策：
+
+```mermaid
+graph TD
+    subgraph Source["資料收齊階段"]
+        A[FinMind 財經新聞]
+        B[證交所 每日股價]
+    end
+
+    subgraph ETL_Process["ETL 排程處理 (Airflow)"]
+        C[(MongoDB 空投 JSON)]
+        D[LLM API 分析與情緒計分]
+        E[(MySQL 股價表與分數表)]
+    end
+
+    subgraph Integration["資料關聯對齊"]
+        F[時間序列與位階合併 SQL]
+        G[(Table 4 決策警示表)]
+    end
+
+    subgraph Serve["微服務輸出"]
+        H((FastAPI 微服務 API))
+    end
+
+    A --> C
+    C -->|Extract| D
+    D -->|Transform & Load| E
+    B --> E
+    E --> F
+    F --> G
+    G --> H
 ```
-Source → Ingest → Storage → Process → Serve → Observe
-```
 
-把上面每個階段換成你們實際用的工具，例如：
-
-| 階段 | 工具 |
-|---|---|
-| Source | {例：Spotify API / Kaggle CSV / 公開資料} |
-| Ingest | Python |
-| Storage | MySQL / MongoDB |
-| Process | pandas / SQL |
-| Serve | FastAPI / Streamlit |
-| Observe | LINE Notify / Sentry |
+| 階層 (Layer) | 工具實作 | 說明 |
+|---|---|---|
+| **Data Lake** | **MongoDB** | 用於爬蟲大量抓取未清洗非結構化原新聞 JSON 的存放處。 |
+| **ETL Orchestration** | **Apache Airflow** | 分散式排程每日抓取資料、觸發分析與寫回管線。 |
+| **Data Warehouse** | **MySQL** | 清洗並結構化股價與分數資料，並於此進行最終的 Join 整合 (Table 4)。 |
+| **NLP & Sentiment** | **LLM API (e.g. GPT-4o-mini)** | 屏棄傳統字典，呼叫輕量化語言大模型進行深層財經語意剖析，精準產出 -1 ~ 1 分數。 |
+| **Serving (API)** | **FastAPI + Docker + GCP** | 建立可供前端呼叫的 API 端點，最終封裝為容器部署於雲端。 |
 
 ---
 
