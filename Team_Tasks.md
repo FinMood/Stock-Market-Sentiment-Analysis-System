@@ -1,0 +1,13 @@
+- [/] 制定專案核心藍圖與技術架構 (Draft Product & Tech Blueprint)
+- [ ] 團隊開會並確立分工 (Team alignment & plan approval)
+- [ ] 基礎設施建置 (Infrastructure)
+    - [ ] 撰寫 `docker-compose.yml` 包含 MySQL, MongoDB, Airflow, FastAPI
+    - [ ] 將服務部署至 GCP 虛擬機測試
+- [ ] 模組重構 (Module Refactoring)
+    - [ ] 原始新聞爬蟲寫入 MongoDB (Data Lake)
+    - [ ] 股價爬蟲寫入 MySQL
+    - [ ] NLP 情緒轉換腳本實作 (MongoDB -> NLP -> MySQL)
+- [ ] 資料整合與服務 (Integration & Serving)
+    - [ ] 完成 Airflow DAG 管線串接
+    - [ ] 完成資料庫時間序列關聯對齊 (Table 4)
+    - [ ] 建立 FastAPI 提供情緒警報數據端點
