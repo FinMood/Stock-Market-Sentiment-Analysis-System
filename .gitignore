@@ -1,17 +1,20 @@
-# 敏感設定檔與 API 金鑰 (絕對不上傳)
+# Python 虛擬環境與快取
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 本機金鑰與真實設定檔
 .env
 llm_config.py
 
-# 程式產出的結果與中間暫存檔
+# 各類大數據與暫存、產出目錄 (留在本地執行生成)
+source/
 output/
-processed_data/
+temp_data/
+score_data/
 
-# 資料庫與 CSV 檔案 (可依團隊需求取消註解)
+# 本機資料庫與系統暫存
 *.db
-# *.csv
-
-# Python 快取與虛擬環境
-__pycache__/
-.venv/
-.pytest_cache/
-*.pyc
+.DS_Store
+Thumbs.db

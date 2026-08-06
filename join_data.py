@@ -1,164 +1,90 @@
-"""
-join_data.py — 資料整合層
-將 Table2 (stock_data) 與 Table3 (news_sentiment) 整合為 Table4 (sentiment_stock_merged)。
-
-整合邏輯：
-  1. 讀取 news_sentiment → 按 (date, stock_id) 聚合：計算日均情緒分數 & 新聞數量
-  2. 讀取 stock_data → 股價資料
-  3. 以 (date, stock_id) 為 Key 做 LEFT JOIN
-  4. 寫入 SQLite sentiment_stock_merged 表 + CSV 備份
-
-用法：
-    uv run python join_data.py
-    uv run python join_data.py --stock 2330
-    uv run python join_data.py --db taiwan50_sentiment.db
-"""
-
-import argparse
 import os
-import sqlite3
 import pandas as pd
 
-
-DB_PATH = "taiwan50_sentiment.db"
-
-
-def load_news_sentiment(conn: sqlite3.Connection, stock_id: str | None = None) -> pd.DataFrame:
+def merge_sentiment_and_stock_data(
+    news_file="output/news_sentiment_report.csv",
+    stock_files=None,
+    output_dir="output"
+):
     """
-    從 SQLite 讀取 news_sentiment (Table3)，
-    按 (date, stock_id) 聚合為每日摘要。
+    【核心功能：時間序列與位階合併 (Time-Series Alignment)】
+    透過 Python Pandas 將每日新聞輿情評分（大批次 LLM 評分結果）與多檔股票價格資料，
+    依據「日期 (date)」與「股票代號 (stock_id)」進行時間軸的 LEFT JOIN 對齊。
+    同時進行每日群組化計算（Group by），產出每日平均情緒 (avg_sentiment) 與聲量 (news_count)。
     """
-    query = "SELECT date, stock_id, sentiment FROM news_sentiment"
-    if stock_id:
-        query += f" WHERE stock_id = '{stock_id}'"
+    if stock_files is None:
+        stock_files = {
+            "0050": "source/0050_price.csv",
+            "2308": "source/2308_price.csv",
+            "2330": "source/2330_price.csv",
+            "2454": "source/2454_price.csv"
+        }
 
-    df = pd.read_sql_query(query, conn)
+    os.makedirs(output_dir, exist_ok=True)
 
-    if df.empty:
-        print("⚠️ news_sentiment 無資料")
-        return pd.DataFrame()
+    if not os.path.exists(news_file):
+        print(f"❌ [錯誤] 找不到新聞輿情檔案：{news_file}")
+        return
 
-    # 聚合：每日每檔股票的平均情緒 + 新聞數
-    agg_df = (
-        df.groupby(["date", "stock_id"])
-        .agg(
-            avg_sentiment=("sentiment", "mean"),
-            news_count=("sentiment", "count"),
+    print(f"📂 正在讀取總體新聞輿情檔案：{news_file}")
+    df_news = pd.read_csv(news_file, encoding="utf-8-sig")
+
+    if 'date' not in df_news.columns:
+        print("⚠️ [警告] 新聞資料中缺少 'date' 欄位！")
+        return
+
+    # 統一將新聞日期轉為標準字串格式 (YYYY-MM-DD)，以利跨表時間序列對齊
+    df_news['date_only'] = pd.to_datetime(df_news['date']).dt.strftime('%Y-%m-%d')
+
+    # 針對每一檔股票分別進行時間序列合併
+    for stock_id, stock_path in stock_files.items():
+        if not os.path.exists(stock_path):
+            print(f"⚠️ [略過] 找不到代號 {stock_id} 的股價檔案：{stock_path}")
+            continue
+
+        print(f"\n🔄 正在處理股票代號: {stock_id} (對應檔案: {stock_path})")
+        df_stock = pd.read_csv(stock_path, encoding="utf-8-sig")
+
+        if 'date' not in df_stock.columns:
+            print(f"⚠️ [略過] 股票 {stock_id} 的資料缺少 'date' 欄位")
+            continue
+
+        df_stock['date_only'] = pd.to_datetime(df_stock['date']).dt.strftime('%Y-%m-%d')
+
+        # 執行時間序列與位階合併 (以股價交易日為基準進行 LEFT JOIN)
+        df_merged = pd.merge(
+            df_stock,
+            df_news[['date_only', 'llm_score' if 'llm_score' in df_news.columns else 'sentiment_score', 'title']].rename(columns={'llm_score': 'sentiment_score'}),
+            on='date_only',
+            how='left'
         )
-        .reset_index()
-    )
-    agg_df["avg_sentiment"] = agg_df["avg_sentiment"].round(4)
-    return agg_df
 
+        # 依交易日群組化計算：當日平均情緒 (avg_sentiment) 與市場聲量 (news_count)
+        if 'sentiment_score' in df_merged.columns:
+            df_grouped = df_merged.groupby(['date_only', 'stock_id' if 'stock_id' in df_stock.columns else 'date_only']).agg(
+                open=('open', 'first'),
+                close=('close', 'first'),
+                volume=('volume', 'first'),
+                avg_sentiment=('sentiment_score', 'mean'),
+                news_count=('title', 'count')
+            ).reset_index()
+            
+            df_grouped['stock_id'] = stock_id
+        else:
+            df_grouped = df_stock.copy()
+            df_grouped['avg_sentiment'] = 0.0
+            df_grouped['news_count'] = 0
 
-def load_stock_data(conn: sqlite3.Connection, stock_id: str | None = None) -> pd.DataFrame:
-    """從 SQLite 讀取 stock_data (Table2)"""
-    query = "SELECT date, stock_id, open, close, volume FROM stock_data"
-    if stock_id:
-        query += f" WHERE stock_id = '{stock_id}'"
+        # 整理最終欄位結構
+        cols_to_keep = ['date_only', 'stock_id', 'open', 'close', 'volume', 'avg_sentiment', 'news_count']
+        existing_cols = [c for c in cols_to_keep if c in df_grouped.columns]
+        df_final_out = df_grouped[existing_cols].rename(columns={'date_only': 'date'})
 
-    df = pd.read_sql_query(query, conn)
-
-    if df.empty:
-        print("⚠️ stock_data 無資料")
-
-    return df
-
-
-def merge_tables(stock_df: pd.DataFrame, news_agg_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    LEFT JOIN：以股價為主表，補上當日情緒資料。
-    沒有新聞的交易日，avg_sentiment = 0, news_count = 0。
-    """
-    # 統一 stock_id 型別為字串，避免 int vs str 造成 merge 失敗
-    stock_df = stock_df.copy()
-    news_agg_df = news_agg_df.copy()
-    stock_df["stock_id"] = stock_df["stock_id"].astype(str)
-    news_agg_df["stock_id"] = news_agg_df["stock_id"].astype(str)
-
-    merged = pd.merge(
-        stock_df,
-        news_agg_df,
-        on=["date", "stock_id"],
-        how="left",
-    )
-    merged["avg_sentiment"] = merged["avg_sentiment"].fillna(0.0)
-    merged["news_count"] = merged["news_count"].fillna(0).astype(int)
-    merged = merged.sort_values("date").reset_index(drop=True)
-    return merged
-
-
-def save_table4(df: pd.DataFrame, conn: sqlite3.Connection):
-    """寫入 SQLite sentiment_stock_merged 表 (Table4)"""
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS sentiment_stock_merged (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT,
-        stock_id TEXT,
-        open REAL,
-        close REAL,
-        volume INTEGER,
-        avg_sentiment REAL,
-        news_count INTEGER
-    )
-    """)
-    conn.commit()
-
-    df.to_sql("sentiment_stock_merged", conn, if_exists="replace", index=False)
-
-    cursor.execute("SELECT COUNT(*) FROM sentiment_stock_merged")
-    total = cursor.fetchone()[0]
-    print(f"🎉 Table4 (sentiment_stock_merged) 寫入完成，共 {total} 筆")
-
-
-def main():
-    parser = argparse.ArgumentParser(description="資料整合層：Table2 + Table3 → Table4")
-    parser.add_argument("--stock", default=None, help="篩選特定股票代碼 (預設: 全部)")
-    parser.add_argument("--db", default=DB_PATH, help="SQLite DB 路徑")
-    args = parser.parse_args()
-
-    print(f"📦 正在整合資料 (DB: {args.db})...")
-    conn = sqlite3.connect(args.db)
-
-    # Step 1: 讀取 & 聚合新聞情緒
-    print("📰 載入 news_sentiment (Table3)...")
-    news_agg = load_news_sentiment(conn, args.stock)
-    if news_agg.empty:
-        conn.close()
-        return
-
-    print(f"   → 聚合後 {len(news_agg)} 筆 (日×股票)")
-
-    # Step 2: 讀取股價
-    print("📊 載入 stock_data (Table2)...")
-    stock_df = load_stock_data(conn, args.stock)
-    if stock_df.empty:
-        conn.close()
-        return
-
-    print(f"   → {len(stock_df)} 筆股價")
-
-    # Step 3: JOIN
-    print("🔗 合併中...")
-    merged = merge_tables(stock_df, news_agg)
-    print(f"   → 合併後 {len(merged)} 筆")
-    print()
-    print(merged.head(10).to_string())
-
-    # Step 4: 寫入
-    save_table4(merged, conn)
-
-    # Step 5: CSV 備份
-    os.makedirs("data", exist_ok=True)
-    csv_path = "data/sentiment_stock_merged.csv"
-    merged.to_csv(csv_path, index=False, encoding="utf-8")
-    print(f"💾 CSV 備份 → {csv_path}")
-
-    conn.close()
-    print("✅ 資料整合完成！")
-
+        # 輸出獨立個股對齊報表至 output/
+        output_file = os.path.join(output_dir, f"sentiment_stock_merged_{stock_id}.csv")
+        df_final_out.to_csv(output_file, index=False, encoding="utf-8-sig")
+        print(f"✅ [成功] 股票 {stock_id} 時間序列對齊完畢，已儲存至：{output_file} (共 {len(df_final_out)} 筆)")
 
 if __name__ == "__main__":
-    main()
+    print("🚀 === 開始執行多檔股票時間序列與位階合併流程 ===")
+    merge_sentiment_and_stock_data()

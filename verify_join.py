@@ -1,39 +1,25 @@
-import sqlite3
+import os
 import pandas as pd
 
-def main():
-    db_path = "taiwan50_sentiment.db"
-    print(f"正在連線至 {db_path} 進行 SQL 關聯查詢...")
-    
-    conn = sqlite3.connect(db_path)
-    
-    query = """
-    SELECT 
-        s.date AS 交易日期,
-        s.stock_id AS 股價代碼,
-        s.close AS 大盤收盤價,
-        n.stock_id AS 新聞個股代碼,
-        n.title AS 新聞標題,
-        n.sentiment AS 新聞輿情分數
-    FROM 
-        stock_data s
-    INNER JOIN 
-        news_sentiment n ON s.date = n.date
-    ORDER BY 
-        s.date ASC 
-    LIMIT 10;
-    """
-    
-    result_df = pd.read_sql_query(query, conn)
-    
-    print("\n======= 核心關聯驗證結果 =======")
-    if result_df.empty:
-        print("💡 依然無交集，可能兩張表的 date 內容完全沒有重疊交易日。")
-    else:
-        print(result_df.to_string())
-        print(f"\n🎉 成功驗證！資料庫已經可以跨表 Join 資料了。")
+def verify_all_merged_data(output_dir="output"):
+    stock_ids = ["0050", "2308", "2330", "2454"]
+    print("🔍 開始全面驗證各股合併後的資料完整性...")
+
+    for stock_id in stock_ids:
+        file_path = os.path.join(output_dir, f"sentiment_stock_merged_{stock_id}.csv")
+        if not os.path.exists(file_path):
+            print(f"⚠️ [略過] 找不到 {stock_id} 的合併報表：{file_path}")
+            continue
+
+        print(f"\n-----------------------------------------")
+        print(f"📊 正在檢查股票：{stock_id} ({file_path})")
+        df = pd.read_csv(file_path, encoding="utf-8-sig")
         
-    conn.close()
+        print(f"• 總交易日數 (Rows)：{len(df)}")
+        print(f"• 資料日期區間：{df['date'].min()} ～ {df['date'].max()}")
+        print(f"• 前 2 筆預覽：\n{df.head(2)}")
+
+    print("\n✨ [驗證作業全部完成]")
 
 if __name__ == "__main__":
-    main()
+    verify_all_merged_data()
