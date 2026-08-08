@@ -12,7 +12,7 @@ llm_config.py
 source/
 output/
 temp_data/
-score_data/
+#score_data/
 
 # 本機資料庫與系統暫存
 *.db
