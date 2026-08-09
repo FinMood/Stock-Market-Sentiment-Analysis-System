@@ -20,11 +20,11 @@ from transformers import AutoTokenizer, BertTokenizerFast
 
 
 # 1. 載入新聞標題
-#news_title_fpath = f"source/tsmc_news_2026_back.csv"
-news_title_fpath = f"source/TaiwanStockNews_test.csv"
+news_title_fpath = "source/TaiwanStockNews_test.csv"
+
 
 news_title_df = pd.read_csv(news_title_fpath)
-print(f"載入新聞標題:{news_title_fpath}")
+print(f"載入新聞標題: {news_title_fpath}")
 
 news_title_list = news_title_df["title"].tolist()
 news_num = len(news_title_list)
@@ -46,7 +46,7 @@ if not os.path.exists(model_path):
 else:
     model = AutoModelForSequenceClassification.from_pretrained(model_path, output_attentions=True)
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-print(f"載入 FinBERT 情緒分析模型:{model_path}")
+print("載入 FinBERT 情緒分析模型\n")
 
 # make a classifier
 classifier = TextClassificationPipeline(model=model, tokenizer=tokenizer, return_all_scores=True)
@@ -55,8 +55,8 @@ classifier = TextClassificationPipeline(model=model, tokenizer=tokenizer, return
 # 3. 使用 FinBERT 進行情緒分析，收集結果到 clf_results_list
 #
 clf_results_list = []
-#chunk_size = 10
-chunk_size = 100
+chunk_size = 10
+#chunk_size = 100
 chunk_num = math.ceil(news_num / chunk_size)
 print("使用 FinBERT 進行情緒分析...")
 print(f"總共{news_num}筆資料，分成{chunk_num}份")
@@ -97,24 +97,23 @@ for i in range(news_num):
                  "my_score": 0.0, "score": 0.0}
 
     # compute sentiment score
+    # compute score = confidence * {pos:1, neu:0, neg:-1} by now
     label = result['label']
     conf_score = result['score']
 
+    sent_dict["conf_score"] = conf_score
     if label == "Positive":
         sent_dict["label"] = "正面"
-        sent_dict["conf_score"] = result["score"]
-        sent_dict["my_score"] = 0.5 + sent_dict["conf_score"]
-        sent_dict["score"] = 1
+        sent_dict["score"] = 1 * conf_score
+        sent_dict["my_score"] = 0.5 + conf_score
     elif label == "Negative":
         sent_dict["label"] = "負面"
-        sent_dict["conf_score"] = result["score"]
-        sent_dict["my_score"] = -1 * 0.5 - sent_dict["conf_score"]
-        sent_dict["score"] = -1
+        sent_dict["score"] = -1 * conf_score
+        sent_dict["my_score"] = -1 * 0.5 - conf_score
     else:
         sent_dict["label"] = "中性"
-        sent_dict["conf_score"] = result["score"]
-        sent_dict["my_score"] = sent_dict["conf_score"] - 0.5
         sent_dict["score"] = 0
+        sent_dict["my_score"] = conf_score - 0.5
 
 #    print(f"sent_dict: {sent_dict}")
 #    print()
@@ -150,12 +149,16 @@ news_title_score_df = pd.concat([news_title_df, news_score_df], axis=1)
 
 # 7. 儲存情緒分析的結果和情緒分數
 processed_dir = "processed"
-#news_sent_fpath = f"{processed_dir}/tsmc_news_2026_back_w_sent_finbert_1.csv"
+score_data_dir = "score_data"
+
 news_sent_fpath = f"{processed_dir}/TaiwanStockNews_test_w_sent_finbert_1.csv"
-news_score_fpath = f"{processed_dir}/TaiwanStockNews_test_w_score_finbert_1.csv"
+news_score_fpath = f"{score_data_dir}/TaiwanStockNews_test_w_score_finbert_1.csv"
+
 
 if not os.path.exists(processed_dir):
     os.makedirs(processed_dir)
+if not os.path.exists(score_data_dir):
+    os.makedirs(score_data_dir)
 
 news_title_sent_df.to_csv(news_sent_fpath, index=False)
 news_title_score_df.to_csv(news_score_fpath, index=False)
@@ -163,7 +166,20 @@ print("儲存情緒分析表和分數")
 print(news_sent_fpath)
 print(news_score_fpath)
 
-# 8. 載入 CSV 檔，確認儲存和載入的資料一樣
+# 8. 驗證資料: 確認資料的正確性
+# 載入 CSV 檔
 news_title_score_df2 = pd.read_csv(news_score_fpath)
 
-print(f"情緒分數儲存成功?: {news_title_score_df2.equals(news_title_score_df)}")
+# 確認儲存和載入的資料一樣
+is_df_equal = news_title_score_df2.equals(news_title_score_df)
+print(f"情緒分數結果儲存成功?: {is_df_equal}")
+
+# 新聞標題欄位是否相同
+is_title_equal = news_title_score_df2["title"].equals(news_title_df["title"])
+print(f"新聞標題欄位相同?: {is_title_equal}")
+
+# 情緒分數是否都介於[-1, 1]之間
+is_scores_in_range = news_title_score_df2["score"].between(-1, 1).all()
+print(f"情緒分數都介於[-1, 1]之間?: {is_scores_in_range}")
+
+

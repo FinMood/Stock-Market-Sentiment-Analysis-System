@@ -20,8 +20,8 @@ from ckip_transformers.nlp import CkipWordSegmenter
 
 
 # 1. 載入新聞標題
-#news_title_fpath = "source/tsmc_news_2026_back.csv"
 news_title_fpath = "source/TaiwanStockNews_test.csv"
+
 
 news_title_df = pd.read_csv(news_title_fpath)
 print(f"載入新聞標題: {news_title_fpath}")
@@ -50,8 +50,9 @@ print(f"載入 CKIP BERT-base 斷詞模型: {ws_model_fpath}")
 
 # 3. 載入斷詞結果，如果沒有，會進行斷詞
 processed_dir = "processed"
-#news_ws_fpath = f"{processed_dir}/tsmc_news_2026_back_ws_ckipbert_1.json"
+
 news_ws_fpath = f"{processed_dir}/TaiwanStockNews_test_ws_ckipbert_1.json"
+
 
 if not os.path.exists(processed_dir):
     os.makedirs(processed_dir)
@@ -76,7 +77,7 @@ else:
     for i in range(chunk_num):
         sidx = i * chunk_size
         eidx = (i + 1) * chunk_size
-        
+
         if sidx >= news_num:
             break
 
@@ -92,6 +93,11 @@ else:
         news_ws_list.extend(ws_list)
         et = time.time()
         print(f"斷詞完成度:{i+1}份/{chunk_num}份，共花費: {et - st:.3f} 秒")
+
+#    for i in range(news_num):
+#        print(news_title_list[i])
+#        print(news_ws_list[i])
+#        print()
 
     # 儲存 CKIP Transformers 斷詞結果
     # transform list to DataFrame
@@ -115,8 +121,8 @@ print("載入 NTUSD 情緒字典")
 
 
 # 5. 載入情緒評分結果，如果沒有，會計算情緒評分
-#sent_dicts_fpath = f"{processed_dir}/tsmc_news_2026_back_sent_dicts_ckipbert_1.json"
 sent_dicts_fpath = f"{processed_dir}/TaiwanStockNews_test_sent_dicts_ckipbert_1.json"
+
 
 if os.path.exists(sent_dicts_fpath):
     sent_dicts_df = pd.read_json(sent_dicts_fpath)
@@ -154,12 +160,15 @@ else:
                     sent_dict["neg"][token] = 1
 
         # compute score
-        sent_dict["score"] = sent_dict["pos_cnt"] - sent_dict["neg_cnt"]
+        pos_cnt = sent_dict["pos_cnt"]
+        neg_cnt = sent_dict["neg_cnt"]
+        total_cnt = pos_cnt + neg_cnt
+        sent_dict["score"] = (pos_cnt - neg_cnt) / max(total_cnt, 1.)
 
         # label based on socre
-        if sent_dict["score"] > 0:
+        if pos_cnt > neg_cnt:
             sent_dict["label"] = "正面"
-        elif sent_dict["score"] == 0:
+        elif pos_cnt == neg_cnt:
             sent_dict["label"] = "中立"
         else:
             sent_dict["label"] = "負面"
@@ -184,16 +193,36 @@ for i in range(min(100, news_num)):
 
 
 # 7. 儲存 新聞標題 和 情緒分數 為一份 CSV 檔
-#news_title_scores_fpath = f"{processed_dir}/tsmc_news_2026_back_w_scores_ckipbert_1.csv"
-news_title_scores_fpath = f"{processed_dir}/TaiwanStockNews_test_w_scores_ckipbert_1.csv"
+score_data_dir = "score_data"
+if not os.path.exists(score_data_dir):
+    os.makedirs(score_data_dir)
 
-sent_scores_df = sent_dicts_df[["score"]]
+news_title_scores_fpath = f"{score_data_dir}/TaiwanStockNews_test_w_scores_ckipbert_1.csv"
+
+
+sent_scores_df = sent_dicts_df[["score"]].copy()
+
+# round float number
+sent_scores_df["score"] = sent_scores_df["score"].round(4)
+
 news_title_scores_df = pd.concat([news_title_df, sent_scores_df], axis=1)
 news_title_scores_df.to_csv(news_title_scores_fpath, index=False)
 print(f"儲存新聞標題情緒分數: {news_title_scores_fpath}")
 
 
-# 8. 載入 CSV 檔，確認儲存和載入的資料一樣
+# 8. 驗證資料: 確認資料的正確性
+# 載入 CSV 檔
 news_title_scores_df2 = pd.read_csv(news_title_scores_fpath)
 
-print(f"情緒分數結果儲存成功?: {news_title_scores_df.equals(news_title_scores_df2)}")
+# 確認儲存和載入的資料一樣
+is_df_equal = news_title_scores_df2.equals(news_title_scores_df)
+print(f"情緒分數結果儲存成功?: {is_df_equal}")
+
+# 新聞標題欄位是否相同
+is_title_equal = news_title_scores_df2["title"].equals(news_title_df["title"])
+print(f"新聞標題欄位相同?: {is_title_equal}")
+
+# 情緒分數是否都介於[-1, 1]之間
+is_scores_in_range = news_title_scores_df2["score"].between(-1, 1).all()
+print(f"情緒分數都介於[-1, 1]之間?: {is_scores_in_range}")
+
