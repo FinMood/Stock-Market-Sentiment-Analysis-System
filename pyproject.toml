@@ -16,4 +16,7 @@ dependencies = [
     "openai>=1.0.0",
     "psutil>=7.2.2",
     "transformers>=5.14.1",
+    "loguru>=0.7.3",
+    "sqlalchemy>=2.0.52",
+    "pymysql>=1.2.0",
 ]

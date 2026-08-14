@@ -1,0 +1,120 @@
+# 全服務整合 docker-compose
+# 使用方式：
+#   docker compose -f docker-compose-local.yml up -d
+
+# Port 分配：
+#   5672  - RabbitMQ (AMQP)
+#   15672 - RabbitMQ 管理介面
+#   5555  - Flower（Celery 監控）
+#   3306  - MySQL
+#   8080  - phpMyAdmin
+#   8081  - Airflow Web UI
+#   8082  - mongo-express（暫無）
+#   3000  - Metabase （暫無）
+
+
+services: # 定義所有要啟動的服務
+  rabbitmq: # RabbitMQ 服務，負責訊息佇列管理
+    image: rabbitmq:3.13-management-alpine # 使用帶有管理介面的 RabbitMQ 映像檔
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672" # 映射 RabbitMQ 的訊息傳遞連接埠（預設 port）
+      - "15672:15672" # 映射 RabbitMQ 管理網頁的連接埠（用於網頁管理介面）
+    environment: # 環境變數
+      RABBITMQ_DEFAULT_USER: "worker" # 設定預設登入使用者名稱
+      RABBITMQ_DEFAULT_PASS: "worker" # 設定預設登入使用者密碼
+
+  flower: # Flower 服務，用於監控 Celery 任務狀態
+    image: mher/flower:latest # 使用最新版本的 Flower 映像檔
+    container_name: flower
+    restart: unless-stopped
+    ports:
+      - "5555:5555" # 映射 Flower 的網頁介面連接埠
+    depends_on:
+      - rabbitmq # 先啟動 rabbitmq 服務，確保 broker（MQ） 可用
+    command: ["celery", "--broker=amqp://worker:worker@rabbitmq:5672//", "flower", "--port=5555"]
+    # 啟動 Flower 並指定 RabbitMQ 為 broker
+
+  worker_twse:
+    build: .
+    container_name: crawler_twse
+    command: uv run python -m celery -A crawler.worker worker --loglevel=info --hostname=twse@%h -Q twse
+    restart: unless-stopped
+    environment:
+      # ${變數:-預設值} 是 compose 的插值：同目錄 .env（或 shell 環境）有設就用設的值，
+      # 沒設就用預設的容器服務名——本機一切照舊；上雲要連別台機器時只改 .env（手冊16）
+      - TZ=Asia/Taipei
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-1234}   # 手冊16 起由部署指令從 Secret Manager 注入
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID:-}       # 雙寫用：沒設就略過 BigQuery（手冊15）
+      - SPANNER_PROJECT_ID=${SPANNER_PROJECT_ID:-}  # 手冊16 Spanner 體驗用，平常不設
+      - SPANNER_INSTANCE=${SPANNER_INSTANCE:-}
+      - SPANNER_DATABASE=${SPANNER_DATABASE:-stockdb}
+      - MONGO_HOST=mongodb   # 補充F: worker 在容器內連 MongoDB 用服務名
+      - PYTHONPATH=/crawler
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./output:/crawler/output
+
+  worker_tpex:
+    build: .
+    container_name: crawler_tpex
+    command: uv run python -m celery -A crawler.worker worker --loglevel=info --hostname=tpex@%h -Q tpex
+    restart: unless-stopped
+    environment:
+      # ${變數:-預設值} 是 compose 的插值：同目錄 .env（或 shell 環境）有設就用設的值，
+      # 沒設就用預設的容器服務名——本機一切照舊；上雲要連別台機器時只改 .env（手冊16）
+      - TZ=Asia/Taipei
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-1234}   # 手冊16 起由部署指令從 Secret Manager 注入
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID:-}       # 雙寫用：沒設就略過 BigQuery（手冊15）
+      - SPANNER_PROJECT_ID=${SPANNER_PROJECT_ID:-}  # 手冊16 Spanner 體驗用，平常不設
+      - SPANNER_INSTANCE=${SPANNER_INSTANCE:-}
+      - SPANNER_DATABASE=${SPANNER_DATABASE:-stockdb}
+      - MONGO_HOST=mongodb   # 補充F: worker 在容器內連 MongoDB 用服務名
+      - PYTHONPATH=/crawler
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./output:/crawler/output
+
+ # ===== Database =====
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: mydb
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-1234}
+    volumes:
+      - mysql:/var/lib/mysql
+      # share volumes of docker container to outside volume, 
+      # let data persist
+      # 將 docker container 的 volumes 跟外部 volumes 做連結, 
+      # 讓資料不會因為 container close or update 而遺失
+    # 設定 mysql 使用原生認證的密碼 hash
+    command: --default-authentication-plugin=mysql_native_password
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+    depends_on:
+      - mysql
+
+# 在最外層加上 volumes 宣告，確保資料持久化
+volumes:
+  mysql:
+
+
+  
