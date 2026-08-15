@@ -53,8 +53,7 @@
 ## 🌟 本專案三大亮點 (Highlights)
 
 1. **多模型協同情緒引擎** ➜ 對應業務問題 2 (極端情緒的分水嶺)
-   - 採用 **FinBERT (預設主力), CKIP-BERT, RoBERTa** 三大深度學習語言模型，結合 **Jieba + NTUSD (台大字典)** 保底，將主觀的文字轉化為客觀的 `[-1.0, 1.0]` 分數。多引擎截長補短，以統計分位數 (Percentile) 自動劃分情緒等級，精準定義極端情緒的臨界點。
-   - *(註：LLM (如 Groq) 批次深層語意判讀目前已備妥初步程式 (`llm_sent_test.py`)並完成 LLM 情緒評分模組與批次評分流程，目前規劃於下一階段導入正式資料管線中。)*
+   - 採用 **FinBERT (預設主力), CKIP-BERT, RoBERTa** 三大深度學習語言模型，搭配 **Jieba + NTUSD (台大字典)** 作為傳統方法保底，再加上 **LLM (Groq API)** 進行深層語意批次判讀，共計 **5 引擎**將主觀的文字轉化為客觀的 `[-1.0, 1.0]` 分數。多引擎截長補短，以統計分位數 (Percentile) 自動劃分情緒等級，精準定義極端情緒的臨界點。
 
 2. **驗證新聞的「滯後效應」** ➜ 對應業務問題 1 (領先或滯後)
    - 結合真實股價與近 3 日累積漲跌幅，一眼看出新聞發布與股價走勢的時差。當極端利多新聞出現但股價早已偷漲完畢，系統透過 `divergence_signal.py` 判定為「落後出貨文」，破解媒體造神或恐慌的假象。
@@ -132,7 +131,7 @@ df["green_light"] = (df["avg_sentiment"] < sentiment_p10) & (df["return_3d"] < 0
 
 ## 系統架構
 
-本系統結合了 **4 引擎情緒演算法** 與自動化資料工程 (ETL) 以提供最精準的防呆決策：
+本系統結合了 **5 引擎情緒演算法** 與自動化資料工程 (ETL) 以提供最精準的防呆決策：
 
 ```mermaid
 graph TD
@@ -149,7 +148,7 @@ graph TD
 
     subgraph News_ETL["新聞情緒 ETL"]
         C[("MongoDB / CSV\n(原始新聞 JSON 暫存)")]
-        D["多引擎情緒計分 (輸出至 score_data/)\n• FinBERT (finbert_sent_test_1.py)\n• CKIP-BERT\n• RoBERTa\n• Jieba + NTUSD"]
+        D["多引擎情緒計分 (輸出至 score_data/)\n• FinBERT\n• CKIP-BERT\n• RoBERTa\n• Jieba + NTUSD\n• LLM (Groq API)"]
         E[("各引擎 CSV 評分檔")]
     end
 
@@ -182,7 +181,7 @@ graph TD
 |---|---|---|---|
 | **Data Source** | **FinMind API** | `crawler/finmind_news.py`, `fetch_stock_price.py` | 透過 `TaiwanStockNews` 與 `TaiwanStockPrice` 兩個資料集取得新聞標題與每日股價。 |
 | **股價寫入** | **SQLite / MySQL** | `insert_stock.py` | 將下載的股價 CSV 經過防呆清洗（過濾垃圾行、統一日期格式、確保數值型態）後寫入 `stock_data` 表。 |
-| **情緒計分 (多引擎)** | **FinBERT, CKIP-BERT, RoBERTa, Jieba** | `sentiment_analyzer.py`, `example/finbert_sent_test_1.py` 等 | 提供四種獨立的情緒預測模型。*(註：`sentiment_analyzer.py` 內建有 Groq LLM API 評分功能，將作為下一階段的高階實驗引擎加入)* |
+| **情緒計分 (多引擎)** | **FinBERT, CKIP-BERT, RoBERTa, Jieba, LLM (Groq)** | `sentiment_analyzer.py`, `example/finbert_sent_test_1.py`, `llm_sent_test.py` 等 | 提供五種獨立的情緒預測模型。其中 LLM 透過 Groq API 進行深層語意批次判讀，評分結果整合於 `all_scores.csv`。 |
 | **時間序列對齊** | **Pandas LEFT JOIN** | `join_data.py` | 以「日期 (date) + 股票代號 (stock_id)」為複合 Key，自動搜尋 `score_data/` 下所有引擎產出的 CSV 檔。計算合併後的**每日平均情緒 (avg_sentiment)** 與**輿情聲量 (news_count)**，並與股價 DataFrame 左聯結對齊。 |
 | **訊號與門檻判定** | **Python Pandas** | `divergence_signal.py` | 讀取合併後的時間序列資料，依照 P10, P25, P75, P90 的歷史分位數切分，輸出最終具備交易指導意義的紅綠燈決策矩陣與勝率分析表。 |
 | **驗證** | **Pandas** | `verify_join.py` | 自動檢查各股合併報表的資料完整性（筆數、日期區間、欄位預覽）。 |
@@ -224,13 +223,13 @@ uv run python main.py  # 透過 uv 執行（自動使用正確的 venv）
 
 ## 後端資料管線 (Data Pipeline) 運行步驟
 
-核心情緒分析引擎（涵蓋 4 個 NLP 模型）與資料庫載入流已初步完成。未來要加入 LLM 引擎或新的財經字典時，只需將新算出的評分 CSV 放進 `score_data/`，整套 Pipeline 即可自動抓取並整合升級。
+核心情緒分析引擎（涵蓋 5 個模型：FinBERT / CKIP-BERT / RoBERTa / Jieba+NTUSD / LLM）與資料庫載入流已完成。未來要加入新的計分引擎或財經字典時，只需將新算出的評分 CSV 放進 `score_data/`，整套 Pipeline 即可自動抓取並整合升級。
 請確保已啟用虛擬環境（.venv），並依序在終端機執行以下指令以驗證資料流：
 
 ```bash
 uv run python download_0050_price.py 
 uv run python insert_stock.py      # 下載大盤歷史股價並載入資料庫（含缺失值清洗與型態防錯）
-uv run python join_data.py         # 將 4 引擎的新聞分數合併平均，並以日期將其與左側收盤股價對齊
+uv run python join_data.py         # 將 5 引擎的新聞分數合併平均，並以日期將其與左側收盤股價對齊
 uv run python divergence_signal.py # (核心決策引擎) 計算情緒與漲幅的分位數量化門檻，輸出最終的觀望/紅綠燈警示表
 uv run python verify_join.py       # 進行跨表時序關聯日誌驗證
 ```
