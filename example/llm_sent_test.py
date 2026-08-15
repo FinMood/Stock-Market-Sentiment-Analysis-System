@@ -22,7 +22,7 @@ if PROJECT_ROOT not in sys.path:
 
 
 try:
-    import llm_config
+    from llm_config import llm_config
 except ImportError:
     llm_config = None
 
