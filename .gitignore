@@ -18,3 +18,11 @@ temp_data/
 *.db
 .DS_Store
 Thumbs.db
+
+# 本機 LLM 測試工具
+example/llm_batch_test.py
+example/merge_batch_to_cache.py
+score_data/batch_tests/
+
+# Local utility
+print_structure.py
