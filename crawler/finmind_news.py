@@ -1,3 +1,5 @@
+# 把資料存入mysql資料庫中
+
 import os
 import time
 import pandas as pd
@@ -5,8 +7,8 @@ import requests
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-from get_0050_stocks import get_0050_stocks
-from news_repository import save_news_to_mysql
+from crawler.get_0050_stocks import get_0050_stocks
+from crawler.news_repository import save_news_to_mysql
 
 # ============================
 # 股票清單

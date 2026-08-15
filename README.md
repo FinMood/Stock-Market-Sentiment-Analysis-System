@@ -52,11 +52,12 @@
 
 ## 🌟 本專案三大亮點 (Highlights)
 
-1. **把「感覺」變成「數據」** ➜ 對應業務問題 2 (極端情緒的分水嶺)
-   - 採用 FinBERT 本地模型 + LLM API 雙引擎量化新聞，將主觀的文字變成客觀的 `[-1.0, 1.0]` 分數，兩套引擎互補交叉驗證，排除人為偏見。以統計分位數 (Percentile) 自動劃分情緒等級，精準定義極端情緒的臨界點。
+1. **多模型協同情緒引擎** ➜ 對應業務問題 2 (極端情緒的分水嶺)
+   - 採用 **FinBERT (預設主力), CKIP-BERT, RoBERTa** 三大深度學習語言模型，結合 **Jieba + NTUSD (台大字典)** 保底，將主觀的文字轉化為客觀的 `[-1.0, 1.0]` 分數。多引擎截長補短，以統計分位數 (Percentile) 自動劃分情緒等級，精準定義極端情緒的臨界點。
+   - *(註：LLM (如 Groq) 批次深層語意判讀目前已備妥初步程式 (`sentiment_analyzer.py`)，目前規劃於下一階段導入正式資料管線中。)*
 
 2. **驗證新聞的「滯後效應」** ➜ 對應業務問題 1 (領先或滯後)
-   - 結合真實股價與近 3 日累積漲跌幅，一眼看出新聞發布與股價走勢的時差。當極端利多新聞出現但股價早已偷漲完畢，系統即判定為「落後出貨文」，破解媒體造神或恐慌的假象。
+   - 結合真實股價與近 3 日累積漲跌幅，一眼看出新聞發布與股價走勢的時差。當極端利多新聞出現但股價早已偷漲完畢，系統透過 `divergence_signal.py` 判定為「落後出貨文」，破解媒體造神或恐慌的假象。
 
 3. **從分析走向「決策」** ➜ 對應業務問題 3 (資訊落差的套利空間)
    - 不只是數據視覺化，更透過歷史回測驗證背離訊號觸發後的實際勝率，基於極端分數提供「順勢」或「逆勢」的紅綠燈交易警示，帶來真實可量化的商業/投資價值。
@@ -131,7 +132,7 @@ df["green_light"] = (df["avg_sentiment"] < sentiment_p10) & (df["return_3d"] < 0
 
 ## 系統架構
 
-本系統結合了 **FinBERT + LLM 雙引擎** 與自動化資料工程 (ETL) 以提供最精準的防呆決策：
+本系統結合了 **4 引擎情緒演算法** 與自動化資料工程 (ETL) 以提供最精準的防呆決策：
 
 ```mermaid
 graph TD
@@ -148,17 +149,18 @@ graph TD
 
     subgraph News_ETL["新聞情緒 ETL"]
         C[("MongoDB / CSV\n(原始新聞 JSON 暫存)")]
-        D["FinBERT + LLM API 雙引擎情緒計分\n• finbert_sent_test_1.py (FinBERT 離線推論)\n• sentiment_analyzer.py (Groq LLM 批次評分 + NTUSD 字典保底)"]
-        E[("sentiment_data 表\n(date, stock_id, title, sentiment_score)")]
+        D["多引擎情緒計分 (輸出至 score_data/)\n• FinBERT (finbert_sent_test_1.py)\n• CKIP-BERT\n• RoBERTa\n• Jieba + NTUSD"]
+        E[("各引擎 CSV 評分檔")]
     end
 
     subgraph Integration["資料關聯對齊 (join_data.py)"]
-        F["時間序列與位階合併\n以『日期 + 股票代號』為 Key\n將 stock_data 與 sentiment_data\n進行 LEFT JOIN 對齊"]
-        G[("Table 4 決策警示表\n(date, stock_id, open, close,\navg_sentiment, news_count)")]
+        F["時間序列與位階合併\n讀取 score_data/ 下所有引擎 CSV\n計算 avg_sentiment 並與 stock_data LEFT JOIN"]
+        G[("綜合決策分析表\n(date, stock_id, open, close,\navg_sentiment, news_count)")]
     end
 
-    subgraph Serve["微服務輸出"]
-        H(("FastAPI 微服務 API\n(verify_join.py 驗證資料完整性)"))
+    subgraph Signal_Module["決策與微服務輸出"]
+        H["divergence_signal.py\n(計算 Percentile 門檻與紅綠燈訊號)"]
+        I(("FastAPI 微服務 API\n(即將實作)"))
     end
 
     A --> C
@@ -167,23 +169,24 @@ graph TD
     B2 --> B3
 
     C -->|run_pipeline.py 清洗去重| D
-    D -->|Transform & Load| E
+    D --> E
 
     B3 --> F
     E --> F
     F --> G
     G --> H
+    H --> I
 ```
 
 | 階層 (Layer) | 工具實作 | 對應程式 | 說明 |
 |---|---|---|---|
 | **Data Source** | **FinMind API** | `crawler/finmind_news.py`, `fetch_stock_price.py` | 透過 `TaiwanStockNews` 與 `TaiwanStockPrice` 兩個資料集取得新聞標題與每日股價。 |
 | **股價寫入** | **SQLite / MySQL** | `insert_stock.py` | 將下載的股價 CSV 經過防呆清洗（過濾垃圾行、統一日期格式、確保數值型態）後寫入 `stock_data` 表。 |
-| **情緒計分 (雙引擎)** | **FinBERT + LLM API** | `sentiment_analyzer.py`, `example/finbert_sent_test_1.py` | **FinBERT** 本地端離線推論（零 API 成本）＋**Groq LLM API** 雲端批次深層語意判讀，搭配 **NTUSD 台大字典 (Jieba)** 保底計分，三重保險。 |
-| **時間序列對齊** | **Pandas LEFT JOIN** | `join_data.py` | 以「日期 (date) + 股票代號 (stock_id)」為複合 Key，將每日股價與當日新聞情緒進行 LEFT JOIN，同時 Group by 計算**每日平均情緒 (avg_sentiment)** 與**輿情聲量 (news_count)**，產出最終的 Table 4 決策分析表。 |
+| **情緒計分 (多引擎)** | **FinBERT, CKIP-BERT, RoBERTa, Jieba** | `sentiment_analyzer.py`, `example/finbert_sent_test_1.py` 等 | 提供四種獨立的情緒預測模型。*(註：`sentiment_analyzer.py` 內建有 Groq LLM API 評分功能，將作為下一階段的高階實驗引擎加入)* |
+| **時間序列對齊** | **Pandas LEFT JOIN** | `join_data.py` | 以「日期 (date) + 股票代號 (stock_id)」為複合 Key，自動搜尋 `score_data/` 下所有引擎產出的 CSV 檔。計算合併後的**每日平均情緒 (avg_sentiment)** 與**輿情聲量 (news_count)**，並與股價 DataFrame 左聯結對齊。 |
+| **訊號與門檻判定** | **Python Pandas** | `divergence_signal.py` | 讀取合併後的時間序列資料，依照 P10, P25, P75, P90 的歷史分位數切分，輸出最終具備交易指導意義的紅綠燈決策矩陣與勝率分析表。 |
 | **驗證** | **Pandas** | `verify_join.py` | 自動檢查各股合併報表的資料完整性（筆數、日期區間、欄位預覽）。 |
-| **管線調度** | **Apache Airflow** | (規劃中) | 分散式排程每日自動觸發 `爬蟲 → 情緒計分 → 對齊合併` 全流程。 |
-| **雲端部署** | **FastAPI + Docker + GCP** | (規劃中) | 建立可供前端呼叫的 API 端點，最終封裝為容器部署於雲端。 |
+| **雲端部署** | **FastAPI + Streamlit + Docker + GCP** | (規劃實作中) | 建立供 FastAPI 抓取資料庫狀態的後端，並透過 Streamlit 實作三頁式 Dashboard（總覽 / 背離訊號 / 多引擎比較分析）。 |
 
 ---
 
@@ -220,12 +223,16 @@ uv run python main.py  # 透過 uv 執行（自動使用正確的 venv）
 
 
 ## 後端資料管線 (Data Pipeline) 運行步驟
-核心情緒分析引擎（sentiment_analyzer.py）與資料庫載入流已完成。未來組員若引入專門的財經字典，只需替換字典輸入路徑，整套 Pipeline 與資料庫即可無縫升級。
+
+核心情緒分析引擎（涵蓋 4 個 NLP 模型）與資料庫載入流已初步完成。未來要加入 LLM 引擎或新的財經字典時，只需將新算出的評分 CSV 放進 `score_data/`，整套 Pipeline 即可自動抓取並整合升級。
 請確保已啟用虛擬環境（.venv），並依序在終端機執行以下指令以驗證資料流：
+
 ```bash
-./.venv/bin/python download_0050_price.py 
-./.venv/bin/python insert_stock.py # 下載大盤歷史股價並載入資料庫（含缺失值清洗與型態防錯）
-./.venv/bin/python verify_join.py # 進行跨表時序關聯驗證（透過日期對齊每日新聞分數與收盤股價
+uv run python download_0050_price.py 
+uv run python insert_stock.py      # 下載大盤歷史股價並載入資料庫（含缺失值清洗與型態防錯）
+uv run python join_data.py         # 將 4 引擎的新聞分數合併平均，並以日期將其與左側收盤股價對齊
+uv run python divergence_signal.py # (核心決策引擎) 計算情緒與漲幅的分位數量化門檻，輸出最終的觀望/紅綠燈警示表
+uv run python verify_join.py       # 進行跨表時序關聯日誌驗證
 ```
 
 ---

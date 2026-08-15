@@ -57,11 +57,11 @@ def get_0050_stocks(csv_path="source/0050_list.csv"):
     return df
 
 # 測試用
-# if __name__ == "__main__":
-#     try:
-#         stocks = get_0050_stocks()
-#         print(stocks.head())  # 先印出前幾行測試
-#         print("-" * 40)
-#         print(f"共 {len(stocks)} 檔股票")
-#     except Exception as e:
-#         print(f"❌ 發生錯誤：{e}")
+if __name__ == "__main__":
+    try:
+        stocks = get_0050_stocks()
+        print(stocks.head())  # 先印出前幾行測試
+        print("-" * 40)
+        print(f"共 {len(stocks)} 檔股票")
+    except Exception as e:
+        print(f"❌ 發生錯誤：{e}")
