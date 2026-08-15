@@ -13,7 +13,9 @@ df_finbert = pd.read_csv(
 df_jieba = pd.read_csv("score_data/TaiwanStockNews_test_w_jieba_scores_1.csv")
 
 # 3. 新增四個對應的模型分數欄位
-df_final["score_Roberta"] = df_Roberta["score"]
+# 翠賢模型
+df_final["score_Roberta"] = df_Roberta["score_normalized"]
+# 至得模型
 df_final["score_ckipbert"] = df_ckipbert["score"]
 df_final["score_finbert"] = df_finbert["score"]
 df_final["score_jieba"] = df_jieba["score"]
