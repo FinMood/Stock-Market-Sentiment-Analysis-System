@@ -54,7 +54,7 @@
 
 1. **多模型協同情緒引擎** ➜ 對應業務問題 2 (極端情緒的分水嶺)
    - 採用 **FinBERT (預設主力), CKIP-BERT, RoBERTa** 三大深度學習語言模型，結合 **Jieba + NTUSD (台大字典)** 保底，將主觀的文字轉化為客觀的 `[-1.0, 1.0]` 分數。多引擎截長補短，以統計分位數 (Percentile) 自動劃分情緒等級，精準定義極端情緒的臨界點。
-   - *(註：LLM (如 Groq) 批次深層語意判讀目前已備妥初步程式 (`sentiment_analyzer.py`)，目前規劃於下一階段導入正式資料管線中。)*
+   - *(註：LLM (如 Groq) 批次深層語意判讀目前已備妥初步程式 (`llm_sent_test.py`)並完成 LLM 情緒評分模組與批次評分流程，目前規劃於下一階段導入正式資料管線中。)*
 
 2. **驗證新聞的「滯後效應」** ➜ 對應業務問題 1 (領先或滯後)
    - 結合真實股價與近 3 日累積漲跌幅，一眼看出新聞發布與股價走勢的時差。當極端利多新聞出現但股價早已偷漲完畢，系統透過 `divergence_signal.py` 判定為「落後出貨文」，破解媒體造神或恐慌的假象。
@@ -249,7 +249,7 @@ Table 3 + Table 2 ➔ Table 4 ： 2-3位  (包含建立API)
 | 廖宏偉 | {資料整合} | [宏偉github](https://github.com/Json105) |
 | 賴至得 | {斷詞/字典計分} | [至得github](https://github.com/cloudyctl67) |
 | 蘇建豪 | {資料整合} | [建豪github](https://github.com/sum78435-lang) |
-| 吳桓宇 | {清洗股價資料、輿情計分、建置後端關係型資料庫} | [桓宇github](https://github.com/joywucareer) |
+| 吳桓宇 | {LLM 新聞情緒評分、情緒評分實驗與結果產出} | [桓宇github](https://github.com/joywucareer) |
 
 ---
 
