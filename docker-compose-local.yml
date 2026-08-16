@@ -7,9 +7,9 @@
 #   15672 - RabbitMQ 管理介面
 #   5555  - Flower（Celery 監控）
 #   3306  - MySQL
-#   8080  - phpMyAdmin
-#   8081  - Airflow Web UI
+#   8080  - Airflow Web UI
 #   8082  - mongo-express（暫無）
+#   8083  - phpMyAdmin
 #   3000  - Metabase （暫無）
 
 
@@ -106,7 +106,7 @@ services: # 定義所有要啟動的服務
     container_name: phpmyadmin
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "8083:80"
     environment:
       PMA_HOST: mysql
     depends_on:

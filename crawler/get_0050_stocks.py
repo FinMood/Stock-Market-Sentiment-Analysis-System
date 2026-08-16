@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def get_0050_stocks(csv_path="source/0050_list.csv"):
+def get_0050_stocks(csv_path="source/0050.csv"):
     """讀取元大 0050 持股 CSV"""
 
     # 💡 修正關鍵 1：鎖定相對於當前專案/腳本的絕對路徑，避免執行目錄搞錯
@@ -57,11 +57,11 @@ def get_0050_stocks(csv_path="source/0050_list.csv"):
     return df
 
 # 測試用
-if __name__ == "__main__":
-    try:
-        stocks = get_0050_stocks()
-        print(stocks.head())  # 先印出前幾行測試
-        print("-" * 40)
-        print(f"共 {len(stocks)} 檔股票")
-    except Exception as e:
-        print(f"❌ 發生錯誤：{e}")
+# if __name__ == "__main__":
+#     try:
+#         stocks = get_0050_stocks()
+#         print(stocks.head())  # 先印出前幾行測試
+#         print("-" * 40)
+#         print(f"共 {len(stocks)} 檔股票")
+#     except Exception as e:
+#         print(f"❌ 發生錯誤：{e}")

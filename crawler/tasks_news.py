@@ -5,7 +5,11 @@ import requests
 
 from celery import Celery
 
-from crawler.news_repository import save_news_to_mysql
+from crawler.news_repository import (
+    save_news_to_mysql,
+    save_crawl_progress,
+    is_crawl_completed,
+)
 
 
 # ========================================
@@ -72,10 +76,40 @@ def get_news(stock_id, date):
     print(f"📅 日期：{date}")
     print("=" * 70)
 
-    # ========================================
-    # FinMind API Parameters
+
+        # ========================================
+    # Crawl Progress 檢查
+    #
+    # success / no_news 已存在
+    # → 代表這個股票 + 日期已經查過
+    # → 不再呼叫 FinMind API
     # ========================================
 
+    if is_crawl_completed(
+        stock_id,
+        date
+    ):
+
+        print()
+        print("⏭️ ====================================")
+        print("⏭️ Crawl Progress 已完成")
+        print("⏭️ 跳過 FinMind API")
+        print("⏭️ ====================================")
+        print(f"股票代碼：{stock_id}")
+        print(f"日期：{date}")
+        print("========================================")
+
+        return {
+            "stock_id": stock_id,
+            "date": date,
+            "count": 0,
+            "status": "skipped"
+        }
+
+    # ========================================
+    # 2. FinMind API Parameters
+    # ========================================
+    
     parameter = {
         "dataset": "TaiwanStockNews",
         "data_id": stock_id,
@@ -126,8 +160,11 @@ def get_news(stock_id, date):
 
                 if df.empty:
 
-                    print(
-                        f"⚠️ {stock_id} {date} 沒有新聞"
+                    save_crawl_progress(
+                        stock_id=stock_id,
+                        crawl_date=date,
+                        status="no_news",
+                        news_count=0
                     )
 
                     return {
@@ -136,7 +173,6 @@ def get_news(stock_id, date):
                         "count": 0,
                         "status": "no_news"
                     }
-
                 # ========================================
                 # 加入股票代碼
                 # ========================================
@@ -170,15 +206,53 @@ def get_news(stock_id, date):
 
                 try:
 
-                    inserted_count = save_news_to_mysql(df)
+                    # ========================================
+                    # 先寫新聞
+                    # ========================================
+
+                    inserted_count = save_news_to_mysql(
+                        df
+                    )
 
                     print(
-                        f"💾 DB結果："
+                        f"💾 news_raw 完成 | "
                         f"{stock_id} {date} | "
-                        f"API {len(df)} 筆 | "
-                        f"實際新增 {inserted_count} 筆"
-)
+                        f"API={len(df)} | "
+                        f"新增={inserted_count}"
+                    )
 
+                    # ========================================
+                    # 新聞寫入成功後
+                    # 才標記 Crawl Progress
+                    # ========================================
+
+                    save_crawl_progress(
+                        stock_id=stock_id,
+                        crawl_date=date,
+                        status="success",
+                        news_count=len(df)
+                    )
+
+                    print(
+                        f"📍 crawl_progress 完成 | "
+                        f"{stock_id} | "
+                        f"{date} | "
+                        f"success | "
+                        f"news_count={len(df)}"
+                    )
+
+                except Exception as e:
+
+                    print(
+                        f"❌ MySQL 寫入失敗："
+                        f"{stock_id} {date}"
+                    )
+
+                    print(
+                        f"{type(e).__name__}: {e}"
+                    )
+
+                    raise
                 except Exception as e:
 
                     print(

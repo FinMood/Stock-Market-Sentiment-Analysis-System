@@ -5,7 +5,7 @@ __pycache__/
 .pytest_cache/
 
 # 本機金鑰與真實設定檔
-.env
+# .env
 llm_config.py
 
 # 各類大數據與暫存、產出目錄 (留在本地執行生成)

@@ -1,7 +1,7 @@
 # 負責「Python 如何連進 MySQL」
 
 import os
-import mysql.connector
+import pymysql
 
 
 def get_connection():
@@ -32,19 +32,14 @@ def get_connection():
         "MYSQL_DATABASE",
         "mydb"
     )
-# MySQL Server 診斷
-    # print("🔌 MySQL 連線資訊")
-    # print(f"   host     = {host}")
-    # print(f"   port     = {port}")
-    # print(f"   user     = {user}")
-    # print(f"   database = {database}")
 
-    conn = mysql.connector.connect(
+    conn = pymysql.connect(
         host=host,
         port=port,
         user=user,
         password=password,
-        database=database
+        database=database,
+        charset="utf8mb4"
     )
 
     print("✅ MySQL 連線成功")

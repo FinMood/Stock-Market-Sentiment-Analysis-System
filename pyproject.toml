@@ -23,4 +23,5 @@ dependencies = [
     "uvicorn[standard]>=0.52.1",
     "streamlit>=1.61.1",
     "plotly>=6.9.0",
+    "apache-airflow>=3.2.2",
 ]
