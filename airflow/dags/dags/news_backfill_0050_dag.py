@@ -8,8 +8,8 @@ from airflow.decorators import dag, task
 @dag(
     dag_id="news_backfill_0050",
     schedule="@daily",
-    start_date=datetime(2026, 2, 22),
-    end_date=datetime(2026, 3, 18),
+    start_date=datetime(2026, 2, 22), # 從2026.2.22開始爬
+    end_date=datetime(2026, 4, 5),
     catchup=True,
     max_active_runs=1,
     tags=["crawler", "0050", "backfill"],

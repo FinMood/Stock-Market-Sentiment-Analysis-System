@@ -1,8 +1,8 @@
 import os
 import time
+
 import pandas as pd
 import requests
-
 from celery import Celery
 
 from crawler.news_repository import (
@@ -12,9 +12,9 @@ from crawler.news_repository import (
 )
 
 
-# ========================================
+# ============================================================
 # Celery Broker
-# ========================================
+# ============================================================
 
 CELERY_BROKER = os.getenv(
     "CELERY_BROKER",
@@ -25,47 +25,42 @@ CELERY_BROKER = os.getenv(
 app = Celery(
     "news_tasks",
     broker=CELERY_BROKER,
-    imports=["crawler.tasks"]
 )
 
 
-# ========================================
+# ============================================================
 # Celery Worker 設定
-# ========================================
+# ============================================================
 
 app.conf.update(
 
     # 同一個 Worker 最多同時處理 5 個 Task
     worker_concurrency=5,
 
-    # 每分鐘最多 120 次 API Request
-    task_annotations={
-        "tasks.get_news": {
-            "rate_limit": "120/m"
-        }
-    },
-
     # 每個 Worker 一次只預取 1 個 Task
-    worker_prefetch_multiplier=1
+    worker_prefetch_multiplier=1,
 )
 
 
-# ========================================
+# ============================================================
 # FinMind API
-# ========================================
+# ============================================================
 
 FINMIND_URL = "https://api.finmindtrade.com/api/v4/data"
 
 
-# ========================================
+# ============================================================
 # Celery Task
 #
-# 1 Task = 1 股票
-# 1 Task = 1 API Request
-# ========================================
+# 1 Task = 1 股票 + 1 日期
+#
+# rate_limit = 5/m
+# 每分鐘最多呼叫 5 次
+# ============================================================
 
 @app.task(
-    name="tasks.get_news"
+    name="tasks.get_news",
+    rate_limit="120/m"
 )
 def get_news(stock_id, date):
 
@@ -76,46 +71,58 @@ def get_news(stock_id, date):
     print(f"📅 日期：{date}")
     print("=" * 70)
 
-
-        # ========================================
-    # Crawl Progress 檢查
+    # ========================================================
+    # 1. Crawl Progress 檢查
     #
-    # success / no_news 已存在
-    # → 代表這個股票 + 日期已經查過
-    # → 不再呼叫 FinMind API
-    # ========================================
+    # success / no_news 已經完成
+    # → 不再重新呼叫 FinMind
+    # ========================================================
 
-    if is_crawl_completed(
-        stock_id,
-        date
-    ):
+    try:
+
+        if is_crawl_completed(
+            stock_id,
+            date
+        ):
+
+            print()
+            print("⏭️ ====================================")
+            print("⏭️ Crawl Progress 已完成")
+            print("⏭️ 跳過 FinMind API")
+            print("⏭️ ====================================")
+            print(f"股票代碼：{stock_id}")
+            print(f"日期：{date}")
+            print("========================================")
+
+            return {
+                "stock_id": stock_id,
+                "date": date,
+                "count": 0,
+                "status": "skipped"
+            }
+
+    except Exception as e:
 
         print()
-        print("⏭️ ====================================")
-        print("⏭️ Crawl Progress 已完成")
-        print("⏭️ 跳過 FinMind API")
-        print("⏭️ ====================================")
-        print(f"股票代碼：{stock_id}")
+        print("❌ crawl_progress 查詢失敗")
+        print(f"股票：{stock_id}")
         print(f"日期：{date}")
-        print("========================================")
+        print(f"{type(e).__name__}: {e}")
 
-        return {
-            "stock_id": stock_id,
-            "date": date,
-            "count": 0,
-            "status": "skipped"
-        }
+        raise
 
-    # ========================================
+
+    # ========================================================
     # 2. FinMind API Parameters
-    # ========================================
-    
+    # ========================================================
+
     parameter = {
         "dataset": "TaiwanStockNews",
         "data_id": stock_id,
         "start_date": date,
         "end_date": date,
     }
+
 
     headers = {
         "User-Agent": (
@@ -125,13 +132,30 @@ def get_news(stock_id, date):
         )
     }
 
-    max_retry = 1
 
-    # ========================================
-    # API Request
-    # ========================================
+    # ========================================================
+    # 3. Retry 設定
+    # ========================================================
 
-    for attempt in range(1, max_retry + 1):
+    max_retry = 3
+
+
+    # ========================================================
+    # 4. API Request
+    # ========================================================
+
+    for attempt in range(
+        1,
+        max_retry + 1
+    ):
+
+        print()
+        print(
+            f"🌐 FinMind API Request | "
+            f"{stock_id} | "
+            f"{date} | "
+            f"attempt={attempt}/{max_retry}"
+        )
 
         try:
 
@@ -142,23 +166,36 @@ def get_news(stock_id, date):
                 timeout=10
             )
 
-            # ========================================
-            # API 成功
-            # ========================================
+
+            # ====================================================
+            # HTTP 200
+            # ====================================================
 
             if response.status_code == 200:
 
                 data = response.json()
 
                 df = pd.DataFrame(
-                    data.get("data", [])
+                    data.get(
+                        "data",
+                        []
+                    )
                 )
 
-                # ========================================
+
+                # =================================================
                 # 沒有新聞
-                # ========================================
+                # =================================================
 
                 if df.empty:
+
+                    print()
+                    print("ℹ️ ====================================")
+                    print("ℹ️ 當日沒有新聞")
+                    print("ℹ️ ====================================")
+                    print(f"股票：{stock_id}")
+                    print(f"日期：{date}")
+                    print("========================================")
 
                     save_crawl_progress(
                         stock_id=stock_id,
@@ -173,15 +210,18 @@ def get_news(stock_id, date):
                         "count": 0,
                         "status": "no_news"
                     }
-                # ========================================
-                # 加入股票代碼
-                # ========================================
+
+
+                # =================================================
+                # 加入 stock_id
+                # =================================================
 
                 df["stock_id"] = stock_id
 
-                # ========================================
-                # 印出第一筆新聞
-                # ========================================
+
+                # =================================================
+                # 第一筆新聞
+                # =================================================
 
                 first_news = df.iloc[0]
 
@@ -189,42 +229,56 @@ def get_news(stock_id, date):
                 print("✅ ====================================")
                 print("✅ FinMind API 成功")
                 print("✅ ====================================")
-                print(f"股票代碼 : {stock_id}")
-                print(f"日期     : {first_news.get('date')}")
-                print(f"來源     : {first_news.get('source')}")
-                print(f"標題     : {first_news.get('title')}")
-                print(f"連結     : {first_news.get('link')}")
-                print("========================================")
+                print(f"股票代碼：{stock_id}")
+                print(f"日期：{date}")
+                print(f"API 筆數：{len(df)}")
                 print(
-                    f"📊 {stock_id} {date} "
-                    f"共取得 {len(df)} 筆新聞"
+                    f"第一筆日期："
+                    f"{first_news.get('date')}"
                 )
+                print(
+                    f"來源："
+                    f"{first_news.get('source')}"
+                )
+                print(
+                    f"標題："
+                    f"{first_news.get('title')}"
+                )
+                print(
+                    f"連結："
+                    f"{first_news.get('link')}"
+                )
+                print("========================================")
 
-                # ========================================
+
+                # =================================================
                 # 寫入 MySQL
-                # ========================================
+                # =================================================
 
                 try:
 
-                    # ========================================
-                    # 先寫新聞
-                    # ========================================
+                    # ---------------------------------------------
+                    # 先存新聞
+                    # ---------------------------------------------
 
                     inserted_count = save_news_to_mysql(
                         df
                     )
 
+                    print()
                     print(
                         f"💾 news_raw 完成 | "
-                        f"{stock_id} {date} | "
+                        f"{stock_id} | "
+                        f"{date} | "
                         f"API={len(df)} | "
                         f"新增={inserted_count}"
                     )
 
-                    # ========================================
-                    # 新聞寫入成功後
-                    # 才標記 Crawl Progress
-                    # ========================================
+
+                    # ---------------------------------------------
+                    # 新聞存成功後
+                    # 才更新 crawl_progress
+                    # ---------------------------------------------
 
                     save_crawl_progress(
                         stock_id=stock_id,
@@ -241,176 +295,398 @@ def get_news(stock_id, date):
                         f"news_count={len(df)}"
                     )
 
+
                 except Exception as e:
 
+                    print()
+                    print("❌ ====================================")
+                    print("❌ MySQL 寫入失敗")
+                    print("❌ ====================================")
+                    print(f"股票：{stock_id}")
+                    print(f"日期：{date}")
                     print(
-                        f"❌ MySQL 寫入失敗："
-                        f"{stock_id} {date}"
+                        f"{type(e).__name__}: "
+                        f"{e}"
                     )
+                    print("========================================")
 
-                    print(
-                        f"{type(e).__name__}: {e}"
-                    )
-
-                    raise
-                except Exception as e:
-
-                    print(
-                        f"❌ MySQL 寫入失敗："
-                        f"{stock_id} {date}"
-                    )
-
-                    print(
-                        f"{type(e).__name__}: {e}"
-                    )
-
-                    # 重要：
-                    # MySQL 失敗 → Task 也視為失敗
+                    # DB 寫入失敗是系統異常
+                    # Celery Task 應該真的失敗
                     raise
 
-                # ========================================
+
+                # =================================================
                 # Task 完成
-                # ========================================
+                # =================================================
 
-                print(
-                    f"🎯 Task 完成："
-                    f"{stock_id} {date}"
-                )
+                print()
+                print("🎯 ====================================")
+                print("🎯 Task 完成")
+                print("🎯 ====================================")
+                print(f"股票：{stock_id}")
+                print(f"日期：{date}")
+                print(f"新聞數：{len(df)}")
+                print("========================================")
+
 
                 return {
                     "stock_id": stock_id,
                     "date": date,
                     "count": len(df),
                     "status": "success",
-                    "first_title": first_news.get("title")
+                    "first_title": first_news.get(
+                        "title"
+                    )
                 }
 
-            # ========================================
-            # API 限流
-            # ========================================
+
+            # ====================================================
+            # HTTP 402
+            #
+            # FinMind quota exceeded
+            # 不 retry
+            # 留給 repair DAG
+            # ====================================================
+
+            elif response.status_code == 402:
+
+                print()
+                print("🛑 ====================================")
+                print("🛑 FinMind API quota 已達上限")
+                print("🛑 ====================================")
+                print(f"股票：{stock_id}")
+                print(f"日期：{date}")
+                print(
+                    f"HTTP："
+                    f"{response.status_code}"
+                )
+                print(
+                    f"回應："
+                    f"{response.text}"
+                )
+                print(
+                    "➡️ 不再 retry，"
+                    "留給 repair DAG 補抓"
+                )
+                print("========================================")
+
+
+                # ---------------------------------------------
+                # 寫入 crawl_progress
+                # ---------------------------------------------
+
+                save_crawl_progress(
+                    stock_id=stock_id,
+                    crawl_date=date,
+                    status="quota_exceeded",
+                    news_count=0
+                )
+
+
+                return {
+                    "stock_id": stock_id,
+                    "date": date,
+                    "count": 0,
+                    "status": "quota_exceeded"
+                }
+
+
+            # ====================================================
+            # HTTP 429
+            #
+            # Too Many Requests
+            # ====================================================
 
             elif response.status_code == 429:
 
+                print()
+                print("⚠️ ====================================")
+                print("⚠️ HTTP 429 Too Many Requests")
+                print("⚠️ ====================================")
+                print(f"股票：{stock_id}")
+                print(f"日期：{date}")
                 print(
-                    f"⚠️ 429 Too Many Requests "
-                    f"{stock_id} {date} "
-                    f"第 {attempt} 次"
+                    f"attempt："
+                    f"{attempt}/{max_retry}"
+                )
+                print(
+                    f"response："
+                    f"{response.text}"
+                )
+                print("========================================")
+
+
+                # ---------------------------------------------
+                # 還能 retry
+                # ---------------------------------------------
+
+                if attempt < max_retry:
+
+                    wait_seconds = (
+                        60 * attempt
+                    )
+
+                    print(
+                        f"⏳ 等待 "
+                        f"{wait_seconds} 秒後重試"
+                    )
+
+                    time.sleep(
+                        wait_seconds
+                    )
+
+                    continue
+
+
+                # ---------------------------------------------
+                # 最後一次仍失敗
+                # ---------------------------------------------
+
+                save_crawl_progress(
+                    stock_id=stock_id,
+                    crawl_date=date,
+                    status="failed",
+                    news_count=0
                 )
 
-                time.sleep(8)
 
-            # ========================================
-            # 其它 HTTP 錯誤
-            # ========================================
+                print(
+                    f"❌ 429 重試失敗 | "
+                    f"{stock_id} | "
+                    f"{date}"
+                )
+
+
+                return {
+                    "stock_id": stock_id,
+                    "date": date,
+                    "count": 0,
+                    "status": "failed"
+                }
+
+
+            # ====================================================
+            # 其它 HTTP Error
+            # ====================================================
 
             else:
 
+                print()
+                print("⚠️ ====================================")
+                print("⚠️ FinMind HTTP Error")
+                print("⚠️ ====================================")
+                print(f"股票：{stock_id}")
+                print(f"日期：{date}")
                 print(
-                    f"⚠️ HTTP {response.status_code} "
-                    f"{stock_id} {date} "
-                    f"第 {attempt} 次"
+                    f"HTTP："
+                    f"{response.status_code}"
                 )
                 print(
-                     f"📨 FinMind 回應：{response.text}"
+                    f"attempt："
+                    f"{attempt}/{max_retry}"
                 )
-                time.sleep(3)
+                print(
+                    f"response："
+                    f"{response.text}"
+                )
+                print("========================================")
 
-        # ========================================
-        # 網路錯誤
-        # ========================================
+
+                # ---------------------------------------------
+                # 還可以 retry
+                # ---------------------------------------------
+
+                if attempt < max_retry:
+
+                    wait_seconds = (
+                        10 * attempt
+                    )
+
+                    print(
+                        f"⏳ 等待 "
+                        f"{wait_seconds} 秒後重試"
+                    )
+
+                    time.sleep(
+                        wait_seconds
+                    )
+
+                    continue
+
+
+                # ---------------------------------------------
+                # HTTP Error 最終失敗
+                # ---------------------------------------------
+
+                save_crawl_progress(
+                    stock_id=stock_id,
+                    crawl_date=date,
+                    status="failed",
+                    news_count=0
+                )
+
+
+                return {
+                    "stock_id": stock_id,
+                    "date": date,
+                    "count": 0,
+                    "status": "failed"
+                }
+
+
+        # ========================================================
+        # Network Error
+        # ========================================================
 
         except (
             requests.exceptions.Timeout,
             requests.exceptions.ConnectionError,
-        ):
+        ) as e:
 
+            print()
+            print("🌐 ====================================")
+            print("🌐 網路連線錯誤")
+            print("🌐 ====================================")
+            print(f"股票：{stock_id}")
+            print(f"日期：{date}")
             print(
-                f"❌ 網路錯誤 "
-                f"{stock_id} {date} "
-                f"第 {attempt} 次"
+                f"attempt："
+                f"{attempt}/{max_retry}"
+            )
+            print(
+                f"{type(e).__name__}: "
+                f"{e}"
+            )
+            print("========================================")
+
+
+            # ---------------------------------------------
+            # 還可以 retry
+            # ---------------------------------------------
+
+            if attempt < max_retry:
+
+                wait_seconds = (
+                    5 * attempt
+                )
+
+                print(
+                    f"⏳ 等待 "
+                    f"{wait_seconds} 秒後重試"
+                )
+
+                time.sleep(
+                    wait_seconds
+                )
+
+                continue
+
+
+            # ---------------------------------------------
+            # 網路錯誤最終失敗
+            # ---------------------------------------------
+
+            save_crawl_progress(
+                stock_id=stock_id,
+                crawl_date=date,
+                status="failed",
+                news_count=0
             )
 
-            time.sleep(2)
 
-        # ========================================
-        # 其它錯誤
-        # ========================================
+            return {
+                "stock_id": stock_id,
+                "date": date,
+                "count": 0,
+                "status": "failed"
+            }
+
+
+        # ========================================================
+        # Request 其它異常
+        # ========================================================
+
+        except requests.exceptions.RequestException as e:
+
+            print()
+            print("❌ ====================================")
+            print("❌ Requests 發生錯誤")
+            print("❌ ====================================")
+            print(f"股票：{stock_id}")
+            print(f"日期：{date}")
+            print(
+                f"{type(e).__name__}: "
+                f"{e}"
+            )
+            print("========================================")
+
+
+            if attempt < max_retry:
+
+                wait_seconds = (
+                    5 * attempt
+                )
+
+                time.sleep(
+                    wait_seconds
+                )
+
+                continue
+
+
+            save_crawl_progress(
+                stock_id=stock_id,
+                crawl_date=date,
+                status="failed",
+                news_count=0
+            )
+
+
+            return {
+                "stock_id": stock_id,
+                "date": date,
+                "count": 0,
+                "status": "failed"
+            }
+
+
+        # ========================================================
+        # 非預期 Python Error
+        # ========================================================
 
         except Exception as e:
 
+            print()
+            print("❌ ====================================")
+            print("❌ Task 發生非預期錯誤")
+            print("❌ ====================================")
+            print(f"股票：{stock_id}")
+            print(f"日期：{date}")
             print(
-                f"❌ Task 發生錯誤 "
-                f"{stock_id} {date}"
+                f"{type(e).__name__}: "
+                f"{e}"
             )
+            print("========================================")
 
-            print(
-                f"{type(e).__name__}: {e}"
-            )
-
+            # 非預期錯誤要真的讓 Celery 標紅
             raise
 
-    # ========================================
-    # Retry 失敗
-    # ========================================
+
+    # ============================================================
+    # 理論上正常不會走到這裡
+    # 保留作為程式流程防護
+    # ============================================================
 
     error_message = (
-        f"FinMind API 下載失敗："
-        f"{stock_id} {date}"
+        f"Task 流程異常結束："
+        f"{stock_id} "
+        f"{date}"
     )
 
-    print(f"❌ {error_message}")
-
-    raise RuntimeError(error_message)
-
-# ========================================
-# @app.task(name="tasks.test_mysql") # 測試連線用
-def test_mysql():
-
-    from crawler.mysql_connection import get_connection
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    # 先看目前連到哪一台 MySQL
-    cursor.execute("""
-        SELECT
-            @@hostname,
-            @@port,
-            DATABASE(),
-            USER(),
-            @@datadir
-    """)
-
-    info = cursor.fetchone()
-
-    print("🔍 Worker MySQL 診斷")
-    print(f"hostname = {info[0]}")
-    print(f"port     = {info[1]}")
-    print(f"database = {info[2]}")
-    print(f"user     = {info[3]}")
-    print(f"datadir  = {info[4]}")
-
-    # 再直接寫一筆測試資料
-    sql = """
-    INSERT IGNORE INTO news_raw
-    (date, stock_id, link, source, title)
-    VALUES (%s, %s, %s, %s, %s)
-    """
-
-    cursor.execute(
-        sql,
-        (
-            "2026-02-26 12:34:56",
-            "TEST8046",
-            "https://example.com/mysql-test-8046",
-            "TEST",
-            "Celery MySQL connection test"
-        )
+    print(
+        f"❌ {error_message}"
     )
 
-    conn.commit()
-
-    print(f"💾 測試資料新增筆數：{cursor.rowcount}")
-
-    cursor.close()
-    conn.close()
+    raise RuntimeError(
+        error_message
+    )
