@@ -110,11 +110,11 @@ else:
 pos_fpath = "NTUSD/正面詞無重複_9365詞.txt"
 neg_fpath = "NTUSD/負面詞無重複_11230詞.txt"
 
-pos_df = pd.read_csv(pos_fpath, header=None, names=["word"], encoding="big5")
+pos_df = pd.read_csv(pos_fpath, header=None, names=["word"], encoding="utf-8")
 pos_words_list = pos_df["word"].tolist()
 #print(pos_words_list)
 
-neg_df = pd.read_csv(neg_fpath, header=None, names=["word"], encoding="big5")
+neg_df = pd.read_csv(neg_fpath, header=None, names=["word"], encoding="utf-8")
 neg_words_list = neg_df["word"].tolist()
 #print(neg_words_list)
 print("載入 NTUSD 情緒字典")
