@@ -1,4 +1,5 @@
-# 台灣中央研究院開發，專門針對繁體中文
+# 台灣中央研究院開發，專門針對繁體中文斷詞
+# Roberta情緒分析模型，中文二分類
 #pip3 install ckip-transformers
 #pip3 install torch
 import pandas as pd
