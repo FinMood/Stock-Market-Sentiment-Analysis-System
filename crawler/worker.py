@@ -31,7 +31,8 @@ app = Celery(
     # include: 告訴 Celery 要載入哪些 Python 模組裡的 task
     # 只有列在這裡的模組, 裡面用 @app.task 裝飾的函式才會被註冊為可執行任務
     include=[
-        "crawler.tasks_news"
+        "crawler.tasks_news",
+        "crawler.tasks_price"
     ],
     # broker: 指定訊息中介的連線網址, Celery 會把任務送到這裡排隊
     # 格式: pyamqp://帳號:密碼@主機:埠號/

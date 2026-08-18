@@ -1,3 +1,4 @@
+# uv run python -m crawler.finmind_news.py
 # 把資料存入mysql資料庫中
 
 import os

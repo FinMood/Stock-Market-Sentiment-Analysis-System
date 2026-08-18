@@ -103,29 +103,6 @@ for stock_id in stock_list:
 
 print(f"📨 總共發送：{task_count} 個 Task")
 
-# 驗證單一組股價資料
-# stock_id = "8046"  
-# date = "2026-02-26"
-
-# get_news.delay(
-#     stock_id,
-#     date
-# )
-
-# task_count = task_count + 1
-
-# print(
-#     f"📨 已發送 Task："
-#     f"{stock_id} / {date}"
-# )
-
-# 測試連線用
-# test_mysql.delay()
-
-# task_count = task_count + 1
-
-# print("📨 已發送 MySQL 測試 Task")
-
 print("=" * 60)
 
 print(
