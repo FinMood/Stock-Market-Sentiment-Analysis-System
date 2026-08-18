@@ -75,6 +75,6 @@ def get_thresholds():
     return {"data": json.loads(df.to_json(orient="records"))}
 
 if __name__ == "__main__":
-    print("🚀 啟動 FastAPI 伺服器：http://localhost:8080")
-    print("👉 Swagger UI：http://localhost:8080/docs")
-    uvicorn.run("api:app", host="0.0.0.0", port=8080, reload=True)
+    print("🚀 啟動 FastAPI 伺服器：http://localhost:8079")
+    print("👉 Swagger UI：http://localhost:8079/docs")
+    uvicorn.run("api:app", host="0.0.0.0", port=8079, reload=True)

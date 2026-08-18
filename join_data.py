@@ -15,10 +15,10 @@ def merge_sentiment_and_stock_data(
     同時進行每日群組化計算（Group by），產出每日平均情緒 (avg_sentiment) 與聲量 (news_count)。
 
     修正項目：
-    - 改為從 score_data/ 讀取所有評分 CSV（支援 finbert / ckipbert / jieba 等多引擎）
-    - 使用正確欄位名 'score'
+    - 支援統一格式 all_scores CSV（含 score_Roberta / score_ckipbert / score_finbert / score_jieba / score_llm）
+    - 支援 llm_results.csv（欄位為 llm_score）
+    - 支援舊版獨立引擎 CSV（使用 score 或 score_normalized 欄位）
     - merge 時以 date + stock_id 為複合 key，避免跨股票新聞交叉污染
-    - 移除不存在的 0050
     """
     if stock_files is None:
         stock_files = {
@@ -35,20 +35,51 @@ def merge_sentiment_and_stock_data(
         print(f"❌ [錯誤] 在 {score_dir}/ 底下找不到任何評分 CSV 檔案")
         return
 
+    # 辨識所有 score_* 欄位前綴，用於偵測 all_scores 統一格式
+    SCORE_COL_PREFIX = "score_"
+    KNOWN_SCORE_COLS = ["score_Roberta", "score_ckipbert", "score_finbert", "score_jieba", "score_llm"]
+
     frames = []
     for sf in score_files:
         print(f"📂 讀取評分檔案：{sf}")
         df_tmp = pd.read_csv(sf, encoding="utf-8-sig")
-        # 加上來源引擎標記（從檔名提取，例如 finbert / ckipbert / jieba）
         basename = os.path.basename(sf)
+
+        # ── 格式一：統一 all_scores CSV（含多個 score_* 欄位）──
+        found_score_cols = [c for c in KNOWN_SCORE_COLS if c in df_tmp.columns]
+        if len(found_score_cols) >= 2:
+            print(f"   ↳ 偵測為統一格式 (all_scores)，包含引擎：{found_score_cols}")
+            id_cols = [c for c in df_tmp.columns if c not in found_score_cols]
+            df_melted = df_tmp.melt(
+                id_vars=id_cols,
+                value_vars=found_score_cols,
+                var_name="engine",
+                value_name="score"
+            )
+            # 清理引擎名稱：score_Roberta -> roberta, score_llm -> llm
+            df_melted["engine"] = df_melted["engine"].str.replace(SCORE_COL_PREFIX, "", n=1).str.lower()
+            # 移除 score 為 NaN 的列（某些引擎可能對該筆新聞沒有評分）
+            df_melted = df_melted.dropna(subset=["score"])
+            frames.append(df_melted)
+            continue
+
+        # ── 格式二：llm_results.csv（欄位為 llm_score）──
+        if "llm_score" in df_tmp.columns:
+            print(f"   ↳ 偵測為 LLM 獨立格式 (llm_score)")
+            df_tmp["score"] = df_tmp["llm_score"]
+            df_tmp["engine"] = "llm"
+            frames.append(df_tmp)
+            continue
+
+        # ── 格式三：舊版獨立引擎 CSV ──
         engine = "unknown"
-        for tag in ["finbert", "ckipbert", "jieba", "roberta", "wang"]:
-            if tag in basename:
+        for tag in ["finbert", "ckipbert", "jieba", "roberta", "wang", "llm"]:
+            if tag in basename.lower():
                 engine = tag
                 break
         df_tmp["engine"] = engine
         
-        # RoBERTa 的 CSV 用 score_normalized 作為方向正規化分數，對齊為 score 欄位
+        # RoBERTa / wang 的 CSV 用 score_normalized 作為方向正規化分數
         if "score_normalized" in df_tmp.columns and engine in ("roberta", "wang"):
             df_tmp["score"] = df_tmp["score_normalized"]
         
