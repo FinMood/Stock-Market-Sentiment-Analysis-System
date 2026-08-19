@@ -60,7 +60,7 @@ FINMIND_URL = "https://api.finmindtrade.com/api/v4/data"
 
 @app.task(
     name="tasks.get_news",
-    rate_limit="120/m"
+    rate_limit="5/m"
 )
 def get_news(stock_id, date):
 

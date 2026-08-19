@@ -30,8 +30,8 @@ def news_repair_0050():
         # Repair 日期區間
         # ========================================
 
-        start_date = "2026-03-29"
-        end_date = "2026-04-03"
+        start_date = "2026-04-29"
+        end_date = "2026-05-24"
 
         current_date = datetime.strptime(
             start_date,
