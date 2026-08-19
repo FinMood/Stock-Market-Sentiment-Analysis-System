@@ -9,7 +9,7 @@ __pycache__/
 llm_config.py
 
 # 各類大數據與暫存、產出目錄 (留在本地執行生成)
-source/
+
 
 # 本機資料庫與系統暫存
 *.db
