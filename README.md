@@ -15,7 +15,7 @@
 本專案主要探討並解決以下 3 個核心業務問題：
 
 1. **領先或滯後？** 當爆發多/空新聞大潮時，股價是「即時反應」、「提前反映」還是新聞只是股價走勢後塵的「落後出貨文」？
-   - **解決方法**：系統每日盤前 (08:00) 結算昨日盤後至今晨的所有新聞情緒，並自動比對過去 3 個交易日 (T-3 至 T-1) 的股價漲跌幅。若新聞極度樂觀但股價早已大漲，系統即判定為「滯後出貨文」並發出紅燈警示。
+   - **解決方法**：系統從歷史資料做回測，結算所有新聞情緒，並自動比對過去 3 個交易日 (T-3 至 T-1) 的股價漲跌幅。若新聞極度樂觀但股價早已大漲，系統即判定為「滯後出貨文」並發出紅燈警示。
 
 2. **極端情緒的分水嶺在哪？** 市場情緒分數 (Sentiment Score) 要達到什麼閾值（如 PR90/PR10），或是當日的輿情密度 (News Density) 達到什麼等級，其對應的股價反轉或延續的期望值最高？
    - **解決方法**：系統不採用人為主觀閾值，而是以歷史資料的統計分位數 (Percentile) 自動劃分等級。當情緒分數突破 PR90（極度樂觀）或跌破 PR10（極度悲觀）時，系統會自動觸發對應的背離訊號矩陣進行判讀。
@@ -220,7 +220,24 @@ uv run python main.py  # 透過 uv 執行（自動使用正確的 venv）
 
 ---
 
+## 服務啟動指南 (前端儀表板與 API)
 
+本系統提供專業的 Web 決策儀表板，啟動前請確保您已經完成資料管線 (Pipeline) 產生了必要的訊號。
+請開啟**兩個獨立的終端機**（Terminal），並啟動您的 `uv` 虛擬環境：
+
+**1. 啟動後端 API 服務 (FastAPI):**
+```bash
+uv run python api.py
+```
+> API 預設運行於 `http://localhost:8079`，作為儀表板的資料供應來源。
+
+**2. 啟動前端看盤儀表板 (Streamlit):**
+```bash
+uv run streamlit run dashboard.py
+```
+> 儀表板預設運行於 `http://localhost:8501`。啟動後，瀏覽器將自動彈出充滿科技感的 FinMood 儀表板畫面！
+
+---
 ## 後端資料管線 (Data Pipeline) 運行步驟
 
 核心情緒分析引擎（涵蓋 5 個模型：FinBERT / CKIP-BERT / RoBERTa / Jieba+NTUSD / LLM）與資料庫載入流已完成。未來要加入新的計分引擎或財經字典時，只需將新算出的評分 CSV 放進 `score_data/`，整套 Pipeline 即可自動抓取並整合升級。
@@ -245,7 +262,7 @@ Table 3 + Table 2 ➔ Table 4 ： 2-3位  (包含建立API)
 |---|---|---|
 | 王翠賢 | {斷詞/字典計分} | [翠賢github](https://github.com/Cuei-Sian) |
 | 張凱宇 | {爬蟲} | [凱宇github](https://github.com/HolaBaGa) |
-| 廖宏偉 | {資料整合} | [宏偉github](https://github.com/Json105) |
+| 廖宏偉 | {前後端開發/系統架構設計/資料整合} | [宏偉github](https://github.com/Json105) |
 | 賴至得 | {斷詞/字典計分} | [至得github](https://github.com/cloudyctl67) |
 | 蘇建豪 | {資料整合} | [建豪github](https://github.com/sum78435-lang) |
 | 吳桓宇 | {LLM 新聞情緒評分、情緒評分實驗與結果產出} | [桓宇github](https://github.com/joywucareer) |
