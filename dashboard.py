@@ -68,11 +68,15 @@ section[data-testid="stSidebar"] {
 section[data-testid="stSidebar"] .stRadio > label {
     color: var(--text-secondary) !important;
     font-weight: 500 !important;
-    font-size: 14px !important;
-    padding: 8px 12px !important;
+    padding: 12px 16px !important;
     border-radius: var(--radius-sm) !important;
     transition: var(--transition-normal) !important;
     margin-bottom: 4px !important;
+}
+
+section[data-testid="stSidebar"] .stRadio > label p,
+section[data-testid="stSidebar"] .stRadio > label div {
+    font-size: 18px !important;
 }
 
 section[data-testid="stSidebar"] .stRadio > div[role="radiogroup"] > label:hover {
@@ -84,7 +88,38 @@ section[data-testid="stSidebar"] .stRadio > div[role="radiogroup"] > label[data-
 section[data-testid="stSidebar"] .stRadio > div[role="radiogroup"] > label[aria-checked="true"] {
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.1)) !important;
     color: var(--accent-green) !important;
-    border-left: 3px solid var(--accent-green) !important;
+    border-left: 4px solid var(--accent-green) !important;
+    font-weight: 700 !important;
+}
+
+.sidebar-brand {
+    padding: 16px 8px 32px 8px !important;
+    text-align: center !important;
+}
+
+.sidebar-brand .logo {
+    font-size: 64px !important;
+    margin-bottom: 8px !important;
+    line-height: 1.1 !important;
+}
+
+.sidebar-brand .name {
+    font-size: 32px !important;
+    font-weight: 900 !important;
+    color: var(--text-primary) !important;
+    letter-spacing: -0.02em !important;
+    margin-bottom: 4px !important;
+    line-height: 1.2 !important;
+}
+
+.sidebar-brand .tagline {
+    font-size: 16px !important;
+    color: var(--text-muted) !important;
+    font-weight: 500 !important;
+}
+
+.sidebar-brand * {
+    font-size: inherit;
 }
 
 /* ── Headers ── */
@@ -337,7 +372,7 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
     background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.6));
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-xl);
-    padding: 28px 32px 20px;
+    padding: 20px 28px;
     margin-bottom: 16px;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -352,68 +387,61 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
     height: 3px;
 }
 
-.hero-banner.red {
-    border-color: rgba(239, 68, 68, 0.35);
-    box-shadow: 0 4px 40px rgba(239, 68, 68, 0.1);
-}
+.hero-banner.red { border-color: rgba(239, 68, 68, 0.35); box-shadow: 0 4px 40px rgba(239, 68, 68, 0.1); }
 .hero-banner.red::before { background: linear-gradient(90deg, #EF4444, #F87171, #EF4444); }
-
-.hero-banner.green {
-    border-color: rgba(16, 185, 129, 0.35);
-    box-shadow: 0 4px 40px rgba(16, 185, 129, 0.1);
-}
+.hero-banner.green { border-color: rgba(16, 185, 129, 0.35); box-shadow: 0 4px 40px rgba(16, 185, 129, 0.1); }
 .hero-banner.green::before { background: linear-gradient(90deg, #10B981, #34D399, #10B981); }
-
-.hero-banner.amber {
-    border-color: rgba(245, 158, 11, 0.35);
-    box-shadow: 0 4px 40px rgba(245, 158, 11, 0.08);
-}
+.hero-banner.amber { border-color: rgba(245, 158, 11, 0.35); box-shadow: 0 4px 40px rgba(245, 158, 11, 0.08); }
 .hero-banner.amber::before { background: linear-gradient(90deg, #F59E0B, #FBBF24, #F59E0B); }
-
-.hero-banner.neutral {
-    border-color: var(--border-subtle);
-}
+.hero-banner.neutral { border-color: var(--border-subtle); }
 .hero-banner.neutral::before { background: linear-gradient(90deg, #64748B, #94A3B8, #64748B); }
 
 .hero-top-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
 
 .hero-stock {
     display: flex;
-    align-items: baseline;
-    gap: 10px;
+    align-items: center;
+    gap: 8px;
 }
 
 .hero-stock-name {
-    font-size: 22px;
+    font-size: 32px;
     font-weight: 800;
     color: var(--text-primary);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
 }
 
 .hero-stock-id {
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 18px;
+    font-weight: 700;
     color: var(--text-muted);
     background: rgba(148, 163, 184, 0.1);
-    padding: 2px 10px;
+    padding: 3px 12px;
     border-radius: 20px;
 }
 
 .hero-date {
-    font-size: 12px;
-    color: var(--text-muted);
+    font-size: 16px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.hero-content {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 48px;
 }
 
 .hero-main {
     display: flex;
     align-items: center;
-    gap: 28px;
-    margin-bottom: 24px;
+    gap: 20px;
 }
 
 .hero-light-wrap {
@@ -421,13 +449,13 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
 }
 
 .hero-light {
-    width: 80px;
-    height: 80px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 36px;
+    font-size: 32px;
 }
 
 .hero-light.red {
@@ -458,8 +486,8 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
 }
 
 .hero-subtitle {
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     margin-bottom: 4px;
@@ -474,8 +502,8 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
     font-size: 36px;
     font-weight: 900;
     letter-spacing: -0.02em;
-    line-height: 1.2;
-    margin-bottom: 6px;
+    line-height: 1.1;
+    margin-bottom: 4px;
 }
 
 .hero-banner.red .hero-label { color: #EF4444; }
@@ -484,43 +512,48 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
 .hero-banner.neutral .hero-label { color: var(--text-primary); }
 
 .hero-desc {
-    font-size: 14px;
+    font-size: 16px;
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.4;
 }
 
 .hero-kpi-row {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
-    gap: 0;
-    padding-top: 16px;
-    border-top: 1px solid rgba(148, 163, 184, 0.08);
+    gap: 20px;
+    padding-left: 20px;
+    border-left: 1px solid rgba(148, 163, 184, 0.15);
 }
 
 .hero-kpi {
-    flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-end;
     gap: 2px;
 }
 
 .hero-kpi-divider {
-    width: 1px;
-    height: 32px;
-    background: rgba(148, 163, 184, 0.12);
+    width: 2px;
+    height: 36px;
+    background: rgba(148, 163, 184, 0.2);
+    margin: 0 4px;
 }
 
 .hero-kpi-name {
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text-muted);
-    font-weight: 500;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 2px;
 }
 
 .hero-kpi-val {
-    font-size: 16px;
+    font-size: 30px;
     font-weight: 800;
     letter-spacing: -0.01em;
+    line-height: 1.1;
 }
 
 .hero-kpi-val.positive { color: var(--accent-green); }
@@ -557,17 +590,17 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
 .ai-compact.neutral-border::before { background: var(--text-muted); }
 
 .ai-compact-tag {
-    font-size: 10px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     white-space: nowrap;
-    padding-top: 2px;
+    padding-top: 1px;
 }
 
 .ai-compact-text {
-    font-size: 13px;
+    font-size: 16px;
     color: var(--text-secondary);
     line-height: 1.6;
 }
@@ -641,7 +674,7 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
 
 .section-title.compact {
     margin: 16px 0 10px 0;
-    font-size: 16px;
+    font-size: 19px;
 }
 
 .section-title .icon {
@@ -792,6 +825,22 @@ def fetch_all_signals():
     except:
         return pd.DataFrame()
 
+@st.cache_data(ttl=60)
+def fetch_thresholds():
+    """取得分位數門檻 (P10/P25/P75/P90)"""
+    try:
+        res = requests.get(f"{API_BASE}/thresholds")
+        if res.status_code == 200:
+            data = res.json()["data"]
+            thresholds = {}
+            for item in data:
+                key = f"{item['指標']}_{item['分位']}"
+                thresholds[key] = item['門檻值']
+            return thresholds
+    except:
+        pass
+    return {}
+
 # ================= Plotly Theme =================
 PLOTLY_LAYOUT = dict(
     template="plotly_dark",
@@ -902,40 +951,42 @@ def page_overview():
     <div class="hero-banner {signal_class}">
         <div class="hero-top-row">
             <div class="hero-stock">
-                <span class="hero-stock-name">{stock_name}</span>
+                <span class="hero-stock-name">今日股票資訊 ｜ {stock_name}</span>
                 <span class="hero-stock-id">{selected_stock}</span>
             </div>
-            <span class="hero-date">{date_str} 更新</span>
+            <span class="hero-date">{date_str} 收盤結算</span>
         </div>
-        <div class="hero-main">
-            <div class="hero-light-wrap">
-                <div class="hero-light {signal_class}">{signal_icon}</div>
+        <div class="hero-content">
+            <div class="hero-main">
+                <div class="hero-light-wrap">
+                    <div class="hero-light {signal_class}">{signal_icon}</div>
+                </div>
+                <div class="hero-text">
+                    <div class="hero-subtitle">{signal_subtitle}</div>
+                    <div class="hero-label">{signal_label}</div>
+                    <div class="hero-desc">{hero_desc}</div>
+                </div>
             </div>
-            <div class="hero-text">
-                <div class="hero-subtitle">{signal_subtitle}</div>
-                <div class="hero-label">{signal_label}</div>
-                <div class="hero-desc">{hero_desc}</div>
-            </div>
-        </div>
-        <div class="hero-kpi-row">
-            <div class="hero-kpi">
-                <span class="hero-kpi-name">🧠 情緒分數</span>
-                <span class="hero-kpi-val {sentiment_color}">{sentiment_val}</span>
-            </div>
-            <div class="hero-kpi-divider"></div>
-            <div class="hero-kpi">
-                <span class="hero-kpi-name">📊 T-3 漲跌</span>
-                <span class="hero-kpi-val {return_color}">{return_val}</span>
-            </div>
-            <div class="hero-kpi-divider"></div>
-            <div class="hero-kpi">
-                <span class="hero-kpi-name">📰 新聞量</span>
-                <span class="hero-kpi-val neutral">{int(latest.get('news_count', 0))} 篇</span>
-            </div>
-            <div class="hero-kpi-divider"></div>
-            <div class="hero-kpi">
-                <span class="hero-kpi-name">💰 收盤價</span>
-                <span class="hero-kpi-val neutral">{latest.get('close', 'N/A')}</span>
+            <div class="hero-kpi-row">
+                <div class="hero-kpi">
+                    <span class="hero-kpi-name">📰 新聞量</span>
+                    <span class="hero-kpi-val neutral">{int(latest.get('news_count', 0))}</span>
+                </div>
+                <div class="hero-kpi-divider"></div>
+                <div class="hero-kpi">
+                    <span class="hero-kpi-name">🧠 情緒分數</span>
+                    <span class="hero-kpi-val {sentiment_color}">{sentiment_val}</span>
+                </div>
+                <div class="hero-kpi-divider"></div>
+                <div class="hero-kpi">
+                    <span class="hero-kpi-name">📊 近3日漲跌</span>
+                    <span class="hero-kpi-val {return_color}">{return_val}</span>
+                </div>
+                <div class="hero-kpi-divider"></div>
+                <div class="hero-kpi">
+                    <span class="hero-kpi-name">💰 收盤價</span>
+                    <span class="hero-kpi-val neutral">{latest.get('close', 'N/A')}</span>
+                </div>
             </div>
         </div>
     </div>
@@ -950,156 +1001,291 @@ def page_overview():
     """, unsafe_allow_html=True)
 
     # ── Date Range Filter ──
-    range_options = {"一週": 5, "一月": 22, "一年": 252, "全期間": None}
-    _, _, _, col_range = st.columns([3, 1, 1, 2])
+    range_options = {"1個月": 22, "3個月": 65, "6個月": 130, "1年": 252, "全期間": None}
+    _, _, _, col_range = st.columns([2, 1, 1, 3])
     with col_range:
         selected_range = st.radio(
             "時間範圍", list(range_options.keys()),
-            index=1,  # default = 一月
+            index=1,  # default = 3個月
             horizontal=True, label_visibility="collapsed",
         )
 
+    # ── Chart Data Prep ──
     n_days = range_options[selected_range]
     df_chart = df.tail(n_days) if n_days else df.copy()
 
-    # ── Dual Axis Chart (immediately visible, no scrolling) ──
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    # ── 3-Row Chart layout ──
+    fig = make_subplots(
+        rows=3, cols=1, shared_xaxes=True,
+        row_heights=[0.6, 0.2, 0.2],
+        vertical_spacing=0.03,
+        specs=[[{"secondary_y": True}], [{"secondary_y": False}], [{"secondary_y": False}]],
+    )
 
-    # Stock price — line with subtle fill
+    # Row 1: Stock price — line with markers
     fig.add_trace(go.Scatter(
         x=df_chart['date'], y=df_chart['close'], name='收盤價',
         mode='lines+markers',
         line=dict(color='#06B6D4', width=2.5),
-        marker=dict(size=5),
+        marker=dict(size=4),
         fill='tozeroy',
         fillcolor='rgba(6, 182, 212, 0.06)',
-    ), secondary_y=False)
+        hovertemplate='收盤價：%{y}<extra></extra>'
+    ), row=1, col=1, secondary_y=False)
 
-    # Sentiment — dual-colored area (positive red area above 0, negative green area below 0)
-    sent_pos = df_chart['avg_sentiment'].clip(lower=0)
-    sent_neg = df_chart['avg_sentiment'].clip(upper=0)
-
+    # Row 1: Sentiment — Single line
     fig.add_trace(go.Scatter(
-        x=df_chart['date'], y=sent_pos, name='情緒 (偏多)',
-        mode='lines+markers',
-        line=dict(color='rgba(239, 68, 68, 0.8)', width=1.5),
-        marker=dict(size=4),
+        x=df_chart['date'], y=df_chart['avg_sentiment'], name='情緒分數',
+        mode='lines',
+        line=dict(color='rgba(139, 92, 246, 0.8)', width=1.5),
         fill='tozeroy',
-        fillcolor='rgba(239, 68, 68, 0.15)',
-        hovertemplate='%{y:.3f}<extra>偏多</extra>',
-    ), secondary_y=True)
+        fillcolor='rgba(139, 92, 246, 0.08)',
+        hovertemplate='情緒：%{y:.3f}<extra></extra>',
+    ), row=1, col=1, secondary_y=True)
 
-    fig.add_trace(go.Scatter(
-        x=df_chart['date'], y=sent_neg, name='情緒 (偏空)',
-        mode='lines+markers',
-        line=dict(color='rgba(16, 185, 129, 0.8)', width=1.5),
-        marker=dict(size=4),
-        fill='tozeroy',
-        fillcolor='rgba(16, 185, 129, 0.15)',
-        hovertemplate='%{y:.3f}<extra>偏空</extra>',
-    ), secondary_y=True)
+    # Row 2: Stock Volume
+    if 'volume' in df_chart.columns:
+        fig.add_trace(go.Bar(
+            x=df_chart['date'], y=df_chart['volume'], name='股票成交量',
+            marker_color='rgba(148, 163, 184, 0.35)',
+            hovertemplate='成交量：%{y:,.0f} 股<extra></extra>'
+        ), row=2, col=1)
 
-    # Signal markers
+    thresholds_data = fetch_thresholds()
+    _sp90 = thresholds_data.get('情緒分數_P90', 0.62)
+    _sp10 = thresholds_data.get('情緒分數_P10', 0.13)
+
+    # Signal markers on price
     signals_chart = df_chart[df_chart['signal'].astype(str).str.contains("🔴|🟢|🟡", na=False)]
     if not signals_chart.empty:
         marker_colors = []
+        marker_labels = []
         for s in signals_chart['signal']:
             s_str = str(s)
             if "🔴" in s_str:
                 marker_colors.append('#EF4444')
+                marker_labels.append('利多出盡')
             elif "🟢" in s_str:
                 marker_colors.append('#10B981')
+                marker_labels.append('超賣反彈')
             else:
                 marker_colors.append('#F59E0B')
+                marker_labels.append('觀望')
 
         fig.add_trace(go.Scatter(
             x=signals_chart['date'], y=signals_chart['close'],
-            mode='markers', name='防呆訊號',
+            mode='markers', name='背離訊號',
             marker=dict(
-                size=14, symbol='diamond',
+                size=12, symbol='diamond',
                 color=marker_colors,
                 line=dict(width=2, color='white'),
             ),
-            text=signals_chart['signal'], hoverinfo='text+x+y'
-        ), secondary_y=False)
+            text=marker_labels,
+            hovertemplate='%{text}<br>收盤價：%{y}<br>%{x}<extra></extra>'
+        ), row=1, col=1, secondary_y=False)
+
+    # Row 3: News Volume Bar Chart
+    if 'news_count' in df_chart.columns:
+        bar_colors = [
+            'rgba(239, 68, 68, 0.6)' if s > _sp90 else
+            'rgba(16, 185, 129, 0.6)' if s < _sp10 else
+            'rgba(100, 116, 139, 0.35)'
+            for s in df_chart['avg_sentiment']
+        ]
+        fig.add_trace(go.Bar(
+            x=df_chart['date'], y=df_chart['news_count'], name='新聞量',
+            marker_color=bar_colors,
+            hovertemplate='新聞量：%{y} 篇<extra></extra>',
+        ), row=3, col=1)
 
     fig.update_layout(
-        height=460,
-        title_text=f"<b>{selected_stock} {stock_name}</b>　情緒 × 股價（{selected_range}）",
-        **PLOTLY_LAYOUT
+        height=600,
+        title_text=f"<b>{selected_stock} {stock_name}</b>　情緒分數 × 股價 × 成交量 × 新聞量（{selected_range}）",
+        **PLOTLY_LAYOUT,
+        barmode='overlay',
     )
-    fig.update_yaxes(title_text="收盤價 (TWD)", secondary_y=False, gridcolor="rgba(148,163,184,0.06)")
-    fig.update_yaxes(title_text="情緒分數 [-1, 1]", secondary_y=True, range=[-1, 1], gridcolor="rgba(148,163,184,0.06)")
-    fig.update_xaxes(gridcolor="rgba(148,163,184,0.06)")
+    fig.update_yaxes(title_text="收盤價", row=1, col=1, secondary_y=False, gridcolor="rgba(148,163,184,0.06)")
+    fig.update_yaxes(title_text="情緒 [-1, 1]", row=1, col=1, secondary_y=True, range=[-1, 1], gridcolor="rgba(148,163,184,0.06)")
+    fig.update_yaxes(title_text="成交量", row=2, col=1, gridcolor="rgba(148,163,184,0.06)")
+    fig.update_yaxes(title_text="新聞量", row=3, col=1, gridcolor="rgba(148,163,184,0.06)")
+    fig.update_xaxes(
+        gridcolor="rgba(148,163,184,0.06)",
+        rangebreaks=[dict(bounds=["sat", "mon"])]
+    )
 
     st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("---")
 
-    # ── Gauge Charts ──
-    st.markdown('<div class="section-title compact"><span class="icon">🎛️</span>位階儀表板 Percentile Gauges<span class="line"></span></div>', unsafe_allow_html=True)
+    # ── Percentile Position Bars ──
+    st.markdown('<div class="section-title compact"><span class="icon">📊</span>歷史位階分析 Percentile Position<span class="line"></span></div>', unsafe_allow_html=True)
 
-    # 針對使用者解釋燈號意義
-    st.markdown("""
-    <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px; padding: 12px 16px; background: rgba(148, 163, 184, 0.05); border-radius: var(--radius-sm); border-left: 3px solid var(--accent-cyan);">
-        💡 <b>防呆燈號怎麼看？</b><br>
-        【情緒熱度】若進入高溫區（紅色區塊），加上【漲跌位階】同在高點（近期偷漲完畢），系統就會亮起 <b>🔴 紅燈：代表高度警示的「利多出盡」</b>。<br>
-        反觀若【情緒熱度】進入低溫區（藍色區塊），且【漲跌位階】也在低檔，則會點亮 <b>🟢 綠燈：代表可能是「超賣反彈機會」</b>。
+    thresholds = fetch_thresholds()
+    sent_p10 = thresholds.get('情緒分數_P10', 0.13)
+    sent_p25 = thresholds.get('情緒分數_P25', 0.28)
+    sent_p75 = thresholds.get('情緒分數_P75', 0.55)
+    sent_p90 = thresholds.get('情緒分數_P90', 0.62)
+    ret_p10 = thresholds.get('漲跌幅_P10', -0.051)
+    ret_p25 = thresholds.get('漲跌幅_P25', -0.028)
+    ret_p75 = thresholds.get('漲跌幅_P75', 0.058)
+    ret_p90 = thresholds.get('漲跌幅_P90', 0.109)
+
+    return_val_num = float(last_return) if pd.notnull(last_return) else 0
+
+    def _build_percentile_bar(label, value, value_fmt, p10, p25, p75, p90, range_min, range_max, zones):
+        """Build a horizontal percentile bar chart using Plotly shapes."""
+        fig = go.Figure()
+        total = range_max - range_min
+
+        # Zone colors and labels
+        boundaries = [range_min, p10, p25, p75, p90, range_max]
+        for i in range(5):
+            fig.add_shape(
+                type="rect",
+                x0=boundaries[i], x1=boundaries[i+1], y0=0, y1=1,
+                fillcolor=zones[i]["color"],
+                line=dict(width=0),
+                layer="below",
+            )
+            # Zone label in center
+            cx = (boundaries[i] + boundaries[i+1]) / 2
+            fig.add_annotation(
+                x=cx, y=0.5,
+                text=zones[i]["label"],
+                showarrow=False,
+                font=dict(size=13, color="rgba(241,245,249,0.85)", family="Noto Sans TC, sans-serif"),
+            )
+
+        # Percentile boundary lines & labels
+        for pval, plabel in [(p10, "P10"), (p25, "P25"), (p75, "P75"), (p90, "P90")]:
+            fig.add_shape(
+                type="line",
+                x0=pval, x1=pval, y0=-0.05, y1=1.05,
+                line=dict(color="rgba(241,245,249,0.4)", width=1, dash="dot"),
+            )
+            fig.add_annotation(
+                x=pval, y=-0.22,
+                text=f"<b>{plabel}</b><br>{pval:.3f}" if abs(pval) < 1 else f"<b>{plabel}</b><br>{pval:.1%}",
+                showarrow=False,
+                font=dict(size=11, color="#94A3B8"),
+            )
+
+        # Current value marker (triangle)
+        clamped_val = max(range_min, min(range_max, value))
+        fig.add_trace(go.Scatter(
+            x=[clamped_val], y=[1.18],
+            mode="markers+text",
+            marker=dict(symbol="triangle-down", size=16, color="#F1F5F9"),
+            text=[f"<b>{value_fmt}</b>"],
+            textposition="top center",
+            textfont=dict(size=17, color="#F1F5F9", family="Inter"),
+            hoverinfo="skip",
+            showlegend=False,
+        ))
+
+        fig.update_layout(
+            height=130,
+            template="plotly_dark",
+            paper_bgcolor="rgba(11, 17, 32, 0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter, Noto Sans TC, sans-serif", color="#94A3B8"),
+            margin=dict(l=10, r=10, t=40, b=35),
+            xaxis=dict(
+                range=[range_min, range_max],
+                showgrid=False, zeroline=False, showticklabels=False,
+                fixedrange=True,
+            ),
+            yaxis=dict(
+                range=[-0.4, 1.5],
+                showgrid=False, zeroline=False, showticklabels=False,
+                fixedrange=True,
+            ),
+            title=dict(
+                text=f"<b>{label}</b>",
+                font=dict(size=13, color="#CBD5E1"),
+                x=0, xanchor="left",
+            ),
+            hovermode=False,
+        )
+        return fig
+
+    # ── Sentiment Percentile Bar ──
+    sent_zones = [
+        {"color": "rgba(30, 58, 138, 0.7)",  "label": "🔴 極度悲觀"},
+        {"color": "rgba(59, 130, 246, 0.4)",  "label": "🟠 偏空"},
+        {"color": "rgba(100, 116, 139, 0.25)", "label": "⚪ 中性"},
+        {"color": "rgba(245, 158, 11, 0.35)",  "label": "🟢 偏多"},
+        {"color": "rgba(239, 68, 68, 0.55)",   "label": "🟢🟢 極度樂觀"},
+    ]
+    fig_sent_bar = _build_percentile_bar(
+        label="🧠 情緒位階 — 目前新聞輿情落在歷史的哪個區間？",
+        value=last_sentiment,
+        value_fmt=f"{last_sentiment:+.3f}",
+        p10=sent_p10, p25=sent_p25, p75=sent_p75, p90=sent_p90,
+        range_min=-1, range_max=1,
+        zones=sent_zones,
+    )
+    st.plotly_chart(fig_sent_bar, use_container_width=True, config={'staticPlot': True})
+
+    # ── Return Percentile Bar ──
+    ret_range_max = max(0.15, abs(ret_p90) * 1.5, abs(ret_p10) * 1.5, abs(return_val_num) * 1.3)
+    ret_range_min = -ret_range_max
+    ret_zones = [
+        {"color": "rgba(16, 185, 129, 0.5)",   "label": "📉 大跌"},
+        {"color": "rgba(16, 185, 129, 0.2)",   "label": "小跌"},
+        {"color": "rgba(100, 116, 139, 0.25)",  "label": "平盤震盪"},
+        {"color": "rgba(239, 68, 68, 0.2)",     "label": "小漲"},
+        {"color": "rgba(239, 68, 68, 0.5)",     "label": "📈 大漲"},
+    ]
+    fig_ret_bar = _build_percentile_bar(
+        label="📊 漲跌位階 — 近 3 日股價累積漲跌在歷史的哪個區間？",
+        value=return_val_num,
+        value_fmt=f"{return_val_num:+.2%}",
+        p10=ret_p10, p25=ret_p25, p75=ret_p75, p90=ret_p90,
+        range_min=ret_range_min, range_max=ret_range_max,
+        zones=ret_zones,
+    )
+    st.plotly_chart(fig_ret_bar, use_container_width=True, config={'staticPlot': True})
+
+    # ── Combination Analysis ──
+    combo_text = f"情緒：<b>{sentiment_level}</b> ＋ 漲跌：<b>{return_level}</b>"
+    if signal_class == "red":
+        combo_icon = "🔴"
+        combo_result = "紅燈警示 — 利多出盡，新聞極度樂觀但股價已偷漲完畢，追高風險極大"
+        combo_border_color = "rgba(239, 68, 68, 0.4)"
+        combo_bg = "rgba(239, 68, 68, 0.08)"
+    elif signal_class == "green":
+        combo_icon = "🟢"
+        combo_result = "綠燈提示 — 超賣反彈，新聞極度恐慌且股價已連跌，歷史統計反彈機率高"
+        combo_border_color = "rgba(16, 185, 129, 0.4)"
+        combo_bg = "rgba(16, 185, 129, 0.08)"
+    elif signal_class == "amber":
+        combo_icon = "🟡"
+        combo_result = "黃燈觀望 — 情緒與股價方向不一致，不確定性高，建議等待確認"
+        combo_border_color = "rgba(245, 158, 11, 0.4)"
+        combo_bg = "rgba(245, 158, 11, 0.08)"
+    else:
+        combo_icon = "⚪"
+        combo_result = "正常 — 情緒與股價走勢一致，無明顯背離，依個人策略操作"
+        combo_border_color = "rgba(148, 163, 184, 0.2)"
+        combo_bg = "rgba(148, 163, 184, 0.05)"
+
+    st.markdown(f"""
+    <div style="
+        margin-top: 8px;
+        padding: 16px 20px;
+        background: {combo_bg};
+        border: 1px solid {combo_border_color};
+        border-radius: var(--radius-md);
+        font-size: 17px;
+        color: var(--text-secondary);
+        line-height: 1.7;
+    ">
+        <div style="font-size: 15px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">📐 組合研判 Combination Analysis</div>
+        <div>{combo_text} → <span style="font-size: 19px;">{combo_icon}</span> <b>{combo_result}</b></div>
+        <div style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">💡 當情緒進入極端區（P90以上或P10以下），且漲跌方向與情緒一致時，即觸發背離訊號。</div>
     </div>
     """, unsafe_allow_html=True)
-
-    col_g1, col_g2 = st.columns(2)
-
-    with col_g1:
-        # 情緒儀表板改為「溫度」色系
-        fig_gauge_sent = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=last_sentiment,
-            number=dict(font=dict(size=32, color="#F1F5F9"), valueformat="+.3f"),
-            title=dict(text="情緒熱度指標 (Temperature)", font=dict(size=13, color="#94A3B8")),
-            gauge=dict(
-                axis=dict(range=[-1, 1], tickcolor="#64748B", dtick=0.5),
-                bar=dict(color="#F1F5F9", thickness=0.2), # 指針變細
-                bgcolor="rgba(30, 41, 59, 0.5)",
-                borderwidth=0,
-                steps=[
-                    dict(range=[-1, -0.5], color="#1E3A8A"), # 極寒
-                    dict(range=[-0.5, 0], color="#3B82F6"),  # 微冷
-                    dict(range=[0, 0.5], color="#F59E0B"),   # 微熱
-                    dict(range=[0.5, 1], color="#EF4444"),   # 極熱
-                ],
-                threshold=dict(line=dict(color="#F1F5F9", width=2), thickness=0.8, value=last_sentiment),
-            ),
-        ))
-        fig_gauge_sent.update_layout(hovermode=False, height=240, **{k: v for k, v in PLOTLY_LAYOUT.items() if k != 'xaxis' and k != 'yaxis'})
-        st.plotly_chart(fig_gauge_sent, use_container_width=True, config={'staticPlot': True})
-
-    with col_g2:
-        return_val_num = float(last_return) if pd.notnull(last_return) else 0
-        # 動態上限：預設至少展現 ±15%，若漲幅超過則動態擴大儀表範圍
-        max_bound = max(0.15, abs(return_val_num) * 1.2)
-
-        fig_gauge_ret = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=return_val_num,
-            number=dict(font=dict(size=32, color="#F1F5F9"), valueformat="+.2%"),
-            title=dict(text="近 3 日漲跌位階", font=dict(size=13, color="#94A3B8")),
-            gauge=dict(
-                axis=dict(range=[-max_bound, max_bound], tickcolor="#64748B", tickformat=".0%", dtick=round(max_bound/3, 2)),
-                bar=dict(color="#F1F5F9", thickness=0.2),
-                bgcolor="rgba(30, 41, 59, 0.5)",
-                borderwidth=0,
-                steps=[
-                    dict(range=[-max_bound, -max_bound/3], color="rgba(16, 185, 129, 0.3)"), # 大跌
-                    dict(range=[-max_bound/3, 0], color="rgba(16, 185, 129, 0.1)"),          # 小跌
-                    dict(range=[0, max_bound/3], color="rgba(239, 68, 68, 0.1)"),            # 小漲
-                    dict(range=[max_bound/3, max_bound], color="rgba(239, 68, 68, 0.3)"),    # 大漲
-                ],
-                threshold=dict(line=dict(color="#F1F5F9", width=2), thickness=0.8, value=return_val_num),
-            ),
-        ))
-        fig_gauge_ret.update_layout(hovermode=False, height=240, **{k: v for k, v in PLOTLY_LAYOUT.items() if k != 'xaxis' and k != 'yaxis'})
-        st.plotly_chart(fig_gauge_ret, use_container_width=True, config={'staticPlot': True})
 
 
 def page_signals():
@@ -1154,14 +1340,14 @@ def page_signals():
         st.markdown("""
         <div class="ai-comment-card red-border">
             <div class="ai-comment-title">🔻 紅燈後跌幅機率</div>
-            <div class="ai-comment-text">需計算 T+3 實際跌幅機率，此區域為回測統計預留欄位。連接歷史數據後將自動更新。</div>
+            <div class="ai-comment-text">需計算未來3日實際跌幅機率，此區域為回測統計預留欄位。連接歷史數據後將自動更新。</div>
         </div>
         """, unsafe_allow_html=True)
     with col2:
         st.markdown("""
         <div class="ai-comment-card green-border">
             <div class="ai-comment-title">🔺 綠燈後反彈機率</div>
-            <div class="ai-comment-text">需計算 T+3 實際反彈機率，此區域為回測統計預留欄位。連接歷史數據後將自動更新。</div>
+            <div class="ai-comment-text">需計算未來3日實際反彈機率，此區域為回測統計預留欄位。連接歷史數據後將自動更新。</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1172,10 +1358,21 @@ def page_signals():
 
     display_cols = ['date', 'stock_id', 'close', 'avg_sentiment', 'return_3d', 'signal', 'sentiment_level', 'return_level']
     available_cols = [c for c in display_cols if c in signals_only.columns]
+    
     st.dataframe(
         signals_only[available_cols].sort_values(by="date", ascending=False),
         use_container_width=True,
         height=500,
+        column_config={
+            "date": "結算日期",
+            "stock_id": "代碼",
+            "close": "當日收盤價",
+            "avg_sentiment": "平均情緒",
+            "return_3d": "近3日漲跌",
+            "signal": "背離判斷訊號",
+            "sentiment_level": "情緒等級",
+            "return_level": "股價等級"
+        }
     )
 
 
@@ -1268,7 +1465,7 @@ with st.sidebar:
 
     page = st.radio(
         "導航",
-        ["📈  總覽與決策儀表板", "🚦  歷史背離訊號分析", "🧠  演算法引擎觀測站"],
+        ["📈  總覽與決策儀表板", "🚦  歷史背離訊號分析"],
         label_visibility="collapsed",
     )
 
