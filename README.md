@@ -167,7 +167,7 @@ graph TD
     B1 --> B2
     B2 --> B3
 
-    C -->|run_pipeline.py 清洗去重| D
+    C --> D
     D --> E
 
     B3 --> F
