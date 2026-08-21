@@ -220,7 +220,24 @@ uv run python main.py  # 透過 uv 執行（自動使用正確的 venv）
 
 ---
 
+## 服務啟動指南 (前端儀表板與 API)
 
+本系統提供專業的 Web 決策儀表板，啟動前請確保您已經完成資料管線 (Pipeline) 產生了必要的訊號。
+請開啟**兩個獨立的終端機**（Terminal），並啟動您的 `uv` 虛擬環境：
+
+**1. 啟動後端 API 服務 (FastAPI):**
+```bash
+uv run python api.py
+```
+> API 預設運行於 `http://localhost:8079`，作為儀表板的資料供應來源。
+
+**2. 啟動前端看盤儀表板 (Streamlit):**
+```bash
+uv run streamlit run dashboard.py
+```
+> 儀表板預設運行於 `http://localhost:8501`。啟動後，瀏覽器將自動彈出充滿科技感的 FinMood 儀表板畫面！
+
+---
 ## 後端資料管線 (Data Pipeline) 運行步驟
 
 核心情緒分析引擎（涵蓋 5 個模型：FinBERT / CKIP-BERT / RoBERTa / Jieba+NTUSD / LLM）與資料庫載入流已完成。未來要加入新的計分引擎或財經字典時，只需將新算出的評分 CSV 放進 `score_data/`，整套 Pipeline 即可自動抓取並整合升級。
@@ -245,7 +262,7 @@ Table 3 + Table 2 ➔ Table 4 ： 2-3位  (包含建立API)
 |---|---|---|
 | 王翠賢 | {斷詞/字典計分} | [翠賢github](https://github.com/Cuei-Sian) |
 | 張凱宇 | {爬蟲} | [凱宇github](https://github.com/HolaBaGa) |
-| 廖宏偉 | {資料整合} | [宏偉github](https://github.com/Json105) |
+| 廖宏偉 | {前後端開發/系統架構設計/資料整合} | [宏偉github](https://github.com/Json105) |
 | 賴至得 | {斷詞/字典計分} | [至得github](https://github.com/cloudyctl67) |
 | 蘇建豪 | {資料整合} | [建豪github](https://github.com/sum78435-lang) |
 | 吳桓宇 | {LLM 新聞情緒評分、情緒評分實驗與結果產出} | [桓宇github](https://github.com/joywucareer) |
