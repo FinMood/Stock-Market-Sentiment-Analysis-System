@@ -142,7 +142,7 @@ graph TD
 
     subgraph Stock_ETL["股價 ETL"]
         B1["fetch_stock_price.py\n(下載個股歷史股價 CSV)"]
-        B2["insert_stock.py\n(清洗防呆 & 寫入資料庫)"]
+        B2["fetch_stock_price.py\n(從 FinMind 取得股價 & 寫入資料庫)"]
         B3[("stock_data 表\n(date, stock_id, open, close, volume)")]
     end
 
@@ -180,7 +180,7 @@ graph TD
 | 階層 (Layer) | 工具實作 | 對應程式 | 說明 |
 |---|---|---|---|
 | **Data Source** | **FinMind API** | `crawler/finmind_news.py`, `fetch_stock_price.py` | 透過 `TaiwanStockNews` 與 `TaiwanStockPrice` 兩個資料集取得新聞標題與每日股價。 |
-| **股價寫入** | **SQLite / MySQL** | `insert_stock.py` | 將下載的股價 CSV 經過防呆清洗（過濾垃圾行、統一日期格式、確保數值型態）後寫入 `stock_data` 表。 |
+| **股價寫入** | **SQLite** | `fetch_stock_price.py` | 從 FinMind API 取得個股每日股價，整理後寫入 `stock_data` 表，並同步備份至 `source/`。 |
 | **情緒計分 (多引擎)** | **FinBERT, CKIP-BERT, RoBERTa, Jieba, LLM (Groq)** | `sentiment_analyzer.py`, `example/finbert_sent_test_1.py`, `llm_sent_test.py` 等 | 提供五種獨立的情緒預測模型。其中 LLM 透過 Groq API 進行深層語意批次判讀，評分結果整合於 `all_scores.csv`。 |
 | **時間序列對齊** | **Pandas LEFT JOIN** | `join_data.py` | 以「日期 (date) + 股票代號 (stock_id)」為複合 Key，自動搜尋 `score_data/` 下所有引擎產出的 CSV 檔。計算合併後的**每日平均情緒 (avg_sentiment)** 與**輿情聲量 (news_count)**，並與股價 DataFrame 左聯結對齊。 |
 | **訊號與門檻判定** | **Python Pandas** | `divergence_signal.py` | 讀取合併後的時間序列資料，依照 P10, P25, P75, P90 的歷史分位數切分，輸出最終具備交易指導意義的紅綠燈決策矩陣與勝率分析表。 |
@@ -245,7 +245,8 @@ uv run streamlit run dashboard.py
 
 ```bash
 uv run python download_0050_price.py 
-uv run python insert_stock.py      # 下載大盤歷史股價並載入資料庫（含缺失值清洗與型態防錯）
+uv run python fetch_stock_price.py --stock 2330 --start 2026-02-23 --end 2026-03-11
+# 從 FinMind 取得指定個股股價，寫入 SQLite 並備份 CSV
 uv run python join_data.py         # 將 5 引擎的新聞分數合併平均，並以日期將其與左側收盤股價對齊
 uv run python divergence_signal.py # (核心決策引擎) 計算情緒與漲幅的分位數量化門檻，輸出最終的觀望/紅綠燈警示表
 uv run python verify_join.py       # 進行跨表時序關聯日誌驗證

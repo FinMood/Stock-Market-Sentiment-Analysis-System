@@ -1381,19 +1381,8 @@ def analyze_and_save_csv(
         "llm_results.csv"
     )
 
-    report_output_file = os.path.join(
-        output_dir,
-        "news_sentiment_report.csv"
-    )
-
     output_df.to_csv(
         llm_output_file,
-        index=False,
-        encoding="utf-8-sig"
-    )
-
-    output_df.to_csv(
-        report_output_file,
         index=False,
         encoding="utf-8-sig"
     )
@@ -1455,11 +1444,6 @@ def analyze_and_save_csv(
     print(
         f"   LLM 結果："
         f"{llm_output_file}"
-    )
-
-    print(
-        f"   總報表："
-        f"{report_output_file}"
     )
 
     print(
