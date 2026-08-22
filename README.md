@@ -269,13 +269,3 @@ Table 3 + Table 2 ➔ Table 4 ： 2-3位  (包含建立API)
 | 吳桓宇 | {LLM 新聞情緒評分、情緒評分實驗與結果產出} | [桓宇github](https://github.com/joywucareer) |
 
 ---
-
-## 進度追蹤
-
-見 [task.md](task.md)
-
----
-
-## License
-
-MIT
