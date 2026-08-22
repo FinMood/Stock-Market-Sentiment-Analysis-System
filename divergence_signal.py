@@ -56,6 +56,7 @@ def compute_divergence_signals(
     # 情緒分數分位數
     sent_p10 = df_valid["avg_sentiment"].quantile(0.10)
     sent_p25 = df_valid["avg_sentiment"].quantile(0.25)
+    sent_p50 = df_valid["avg_sentiment"].quantile(0.50)
     sent_p75 = df_valid["avg_sentiment"].quantile(0.75)
     sent_p90 = df_valid["avg_sentiment"].quantile(0.90)
 
@@ -105,8 +106,8 @@ def compute_divergence_signals(
     df_all["return_level"] = df_all["return_3d"].apply(label_return)
 
     # ── Step 4：計算背離訊號（紅綠燈） ──
-    df_all["red_light"] = (df_all["avg_sentiment"] > sent_p90) & (df_all["return_3d"] > 0)
-    df_all["green_light"] = (df_all["avg_sentiment"] < sent_p10) & (df_all["return_3d"] < 0)
+    df_all["red_light"] = (df_all["avg_sentiment"] > sent_p90) & (df_all["return_3d"] > ret_p90)
+    df_all["green_light"] = (df_all["avg_sentiment"] < sent_p10) & (df_all["return_3d"] < ret_p10)
 
     def assign_signal(row):
         if pd.isna(row["return_3d"]) or pd.isna(row["avg_sentiment"]):
