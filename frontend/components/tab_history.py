@@ -7,26 +7,32 @@ def render(selected_stock, stock_name, df):
 
     st.markdown('<div class="section-title"><span class="icon">🚦</span>歷史背離訊號分析 Divergence Analysis<span class="line"></span></div>', unsafe_allow_html=True)
 
+    col_view, _ = st.columns([2, 3])
+    with col_view:
+        view_mode = st.radio(
+            "🔎 歷史統計範圍", 
+            [f"單一個股 ({selected_stock} {stock_name})", "全部個股 (大盤加總)"], 
+            horizontal=True,
+            label_visibility="collapsed"
+        )
+        
     df_all = fetch_all_signals()
-    # 限制只顯示查詢日期以前的歷史背離，避免「未來資料預知」
     if 'date' in df_all.columns:
         df_all['date'] = pd.to_datetime(df_all['date'])
-        # Also selected_date_str comes from argument df.iloc[-1]['date'] if not passed.
-        # But wait, selected_date_str is not passed! We passed df_up_to_date!
-        current_date_obj = df.iloc[-1]['date']
-        df_all = df_all[df_all['date'] <= current_date_obj]
-    df_all = df_all[df_all["stock_id"].astype(str) == str(selected_stock)]
+        
+        # In Tab 3, we don't apply the single-page Date selector, we show all history.
+        # But we do filter by stock if "單一個股" is chosen.
+        if "單一個股" in view_mode:
+            df_all = df_all[df_all["stock_id"].astype(str) == str(selected_stock)]
 
-
-    df_all = df_all[df_all["stock_id"].astype(str) == str(selected_stock)]
     if df_all.empty:
-        st.markdown("""
+        st.markdown('''
         <div class="placeholder-card">
             <div class="placeholder-icon">📡</div>
-            <div class="placeholder-title">請先啟動 API 服務</div>
-            <div class="placeholder-desc">確認 FastAPI 後端已運行，並已完成資料管線。</div>
+            <div class="placeholder-title">此範圍內目前無歷史背離紀錄</div>
+            <div class="placeholder-desc">請調整選股範圍或確認資料庫是否已同步。</div>
         </div>
-        """, unsafe_allow_html=True)
+        ''', unsafe_allow_html=True)
         return
 
     signals_only = df_all[df_all['signal'].astype(str).str.contains("🔴|🟢|🟡", na=False)].copy()

@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+from frontend.data_fetch import fetch_thresholds
 from plotly.subplots import make_subplots
 from frontend.styles import PLOTLY_LAYOUT
 
@@ -18,8 +19,18 @@ def render(selected_stock, stock_name, df):
         """, unsafe_allow_html=True)
         return
 
+    # ── Local Date Filter ──
+    date_options = df["date"].dt.strftime("%Y-%m-%d").tolist()[::-1]
+    col_date, _ = st.columns([1, 4])
+    with col_date:
+        selected_date_str = st.selectbox("📅 結算回測日期 (Tab 1)", date_options, key="date_t1")
+    
+    df_up_to_date = df[df["date"] <= pd.to_datetime(selected_date_str)].copy()
+    if df_up_to_date.empty:
+        return
+
     # ── Extract Latest Day Info ──
-    latest = df.iloc[-1]
+    latest = df_up_to_date.iloc[-1]
     last_signal = str(latest.get("signal", "—"))
     last_sentiment = round(float(latest.get("avg_sentiment", 0)), 3)  # 強制小數點三位
     last_return_raw = latest.get("return_3d", None)
@@ -138,7 +149,7 @@ def render(selected_stock, stock_name, df):
 
     # ── Chart Data Prep ──
     n_days = range_options[selected_range]
-    df_chart = df.tail(n_days) if n_days else df.copy()
+    df_chart = df_up_to_date.tail(n_days) if n_days else df_up_to_date.copy()
 
     # ── 3-Row Chart layout ──
     fig = make_subplots(

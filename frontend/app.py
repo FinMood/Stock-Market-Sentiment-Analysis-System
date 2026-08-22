@@ -11,7 +11,7 @@ def main():
     # ================= Global Layout (Tabs & Filters) =================
     stock_options = [f"{sid} {STOCK_NAMES.get(sid, '')}" for sid in STOCK_NAMES]
     
-    col_stock, col_date, _empty, col_brand = st.columns([2, 2, 3, 3])
+    col_stock, _empty, col_brand = st.columns([2, 5, 3])
     
     with col_stock:
         selected_label = st.selectbox("🎯 選擇觀測標的", stock_options)
@@ -31,26 +31,16 @@ def main():
     
     df_global = fetch_stock_data(selected_stock)
     
-    with col_date:
-        if not df_global.empty:
-            date_options = df_global["date"].dt.strftime("%Y-%m-%d").tolist()[::-1]
-            selected_date_str = st.selectbox("📅 結算回測日期", date_options)
-            df_up_to_date = df_global[df_global["date"] <= pd.to_datetime(selected_date_str)].copy()
-        else:
-            selected_date_str = None
-            df_up_to_date = df_global.copy()
-            st.selectbox("📅 結算回測日期", ["無資料"])
-    
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Top-level Tabs
     tab1, tab2, tab3 = st.tabs(["📈  即時情緒決策板", "📊  歷史位階與組合研判", "🚦  歷史背離訊號紀錄"])
     
     with tab1:
-        tab_overview.render(selected_stock, stock_name, df_up_to_date)
+        tab_overview.render(selected_stock, stock_name, df_global)
     
     with tab2:
-        tab_position.render(selected_stock, stock_name, df_up_to_date)
+        tab_position.render(selected_stock, stock_name, df_global)
     
     with tab3:
-        tab_history.render(selected_stock, stock_name, df_up_to_date)
+        tab_history.render(selected_stock, stock_name, df_global)

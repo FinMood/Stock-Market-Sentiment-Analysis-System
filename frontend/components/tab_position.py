@@ -1,13 +1,23 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from frontend.data_fetch import fetch_thresholds
 
 def render(selected_stock, stock_name, df):
     """Page 2: 歷史背離訊號分析"""
 
+    # ── Local Date Filter ──
+    date_options = df["date"].dt.strftime("%Y-%m-%d").tolist()[::-1]
+    col_date, _ = st.columns([1, 4])
+    with col_date:
+        selected_date_str = st.selectbox("📅 結算回測日期 (Tab 2)", date_options, key="date_t2")
+    
+    df_up_to_date = df[df["date"] <= pd.to_datetime(selected_date_str)].copy()
+    if df_up_to_date.empty:
+        return
 
-    latest = df.iloc[-1]
+    latest = df_up_to_date.iloc[-1]
     last_signal = str(latest.get("signal", "—"))
     last_sentiment = round(float(latest.get("avg_sentiment", 0)), 3)
     last_return_raw = latest.get("return_3d", None)
@@ -187,6 +197,6 @@ def render(selected_stock, stock_name, df):
     ">
         <div style="font-size: 15px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">📐 組合研判 Combination Analysis</div>
         <div>{combo_text} → <span style="font-size: 19px;">{combo_icon}</span> <b>{combo_result}</b></div>
-        <div style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">💡 當情緒進入極端區（P90以上或P10以下），且漲跌方向與情緒一致時，即觸發背離訊號。</div>
+        <div style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">💡 當 <b>情緒與股價</b> 雙雙進入歷史極端區（同時突破 P90 或 同時跌破 P10）時，將觸發最高層級的背離警示訊號。</div>
     </div>
     """, unsafe_allow_html=True)
